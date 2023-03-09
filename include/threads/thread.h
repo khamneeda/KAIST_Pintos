@@ -91,6 +91,7 @@ struct thread {
 	enum thread_status status;          /* Thread state. */
 	char name[16];                      /* Name (for debugging purposes). */
 	int priority;                       /* Priority. */
+	int local_ticks; 					/* local_ticks */
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
@@ -114,6 +115,9 @@ struct thread {
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
 
+//??
+//typedef bool list_less_func(struct list_elem *a,struct list_elem *b,void * aux);
+bool less_ticks(struct list_elem *,struct list_elem *,void * );
 void thread_init (void);
 void thread_start (void);
 
@@ -132,6 +136,8 @@ const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
+void thread_wakeup(int64_t);
+void thread_sleep(int64_t);
 
 int thread_get_priority (void);
 void thread_set_priority (int);

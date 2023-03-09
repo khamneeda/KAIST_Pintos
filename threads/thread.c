@@ -28,6 +28,10 @@
    that are ready to run but not actually running. */
 static struct list ready_list;
 
+/* List of processes in THREAD_BLOCKED state, that is, processes
+   that are not actually running during the "duration". */
+static struct list sleep_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -92,6 +96,14 @@ static uint64_t gdt[3] = { 0, 0x00af9a000000ffff, 0x00cf92000000ffff };
 
    It is not safe to call thread_current() until this function
    finishes. */
+
+bool
+less_ticks(struct list_elem *a, struct list_elem *b, void *aux) { //?
+	struct thread* a_thread= list_entry(a, struct thread, elem);
+	struct thread* b_thread= list_entry(b, struct thread, elem);
+	return (a_thread->local_ticks<b_thread->local_ticks);
+}
+
 void
 thread_init (void) {
 	ASSERT (intr_get_level () == INTR_OFF);
@@ -191,6 +203,7 @@ thread_create (const char *name, int priority,
 
 	/* Initialize thread. */
 	init_thread (t, name, priority);
+	t->local_ticks = 0;
 	tid = t->tid = allocate_tid ();
 
 	/* Call the kernel_thread if it scheduled.
@@ -308,6 +321,40 @@ thread_yield (void) {
 	intr_set_level (old_level);
 }
 
+/*   */
+void
+thread_wakeup (int64_t global_ticks) {
+	if (!list_empty (&sleep_list))
+	{
+		struct thread* t= list_entry(list_front (&sleep_list), struct thread, elem);
+	    if (t->local_ticks <= global_ticks )
+        {
+          t->status=THREAD_READY;
+		  list_pop_front(&sleep_list);
+		  list_push_back (&ready_list, &t->elem);  //must_insert
+          //list_insert_ordered (&ready_list, &t->elem,
+
+        }
+	}
+}
+
+
+void
+thread_sleep (int64_t global_ticks) {
+	struct thread *curr = thread_current ();
+	enum intr_level old_level;
+
+	//ASSERT (!intr_context ());  //??
+
+	old_level = intr_disable ();
+	if (curr != idle_thread)
+		//list_push_back (&sleep_list, &curr->elem); //must_insert
+		list_insert_ordered(&sleep_list,&curr->elem,less_ticks,0);
+	do_schedule (THREAD_BLOCKED);
+	intr_set_level (old_level);
+}
+
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
@@ -421,7 +468,7 @@ next_thread_to_run (void) {
 	if (list_empty (&ready_list))
 		return idle_thread;
 	else
-		return list_entry (list_pop_front (&ready_list), struct thread, elem);
+		return list_entry(list_pop_front (&ready_list), struct thread, elem);
 }
 
 /* Use iretq to launch the thread */

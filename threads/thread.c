@@ -332,14 +332,10 @@ thread_wakeup (int64_t global_ticks) {
 		struct thread* t= list_entry(list_front (&sleep_list), struct thread, elem);
 	    while (t->local_ticks <= global_ticks )
         {
-		  printf("tid: %d\n",t->tid);
-		  printf("local: %lld\n",t->local_ticks);
-		  printf("global: %lld\n",global_ticks);
           t->status=THREAD_READY;
 		  list_pop_front(&sleep_list);
 		  list_push_back (&ready_list, &t->elem);  //must_insert
           //list_insert_ordered(&ready_list, &t->elem,
-		  printf("ready_list_size: %ld\n",list_size (&ready_list));
 		  if (!list_empty (&sleep_list)){
             t= list_entry(list_front (&sleep_list), struct thread, elem);
 		  }
@@ -362,8 +358,6 @@ thread_sleep (int64_t local_ticks) {
 		curr->local_ticks = local_ticks;
 		//list_push_back (&sleep_list, &curr->elem); //must_insert
 		list_insert_ordered(&sleep_list,&curr->elem,less_ticks,0);
-		printf("sleep_list_size: %ld\n",list_size (&sleep_list));
-		printf("ready_list_size: %ld\n",list_size (&ready_list));
 	}
 	do_schedule (THREAD_BLOCKED);
 	intr_set_level (old_level);

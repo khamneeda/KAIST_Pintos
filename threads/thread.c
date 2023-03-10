@@ -97,12 +97,15 @@ static uint64_t gdt[3] = { 0, 0x00af9a000000ffff, 0x00cf92000000ffff };
    It is not safe to call thread_current() until this function
    finishes. */
 
+//bool
+//(*less_ticks)(const struct list_elem *a, const struct list_elem *b, const void *aux) = NULL;
 bool
-less_ticks(struct list_elem *a, struct list_elem *b, void *aux) { //?
+less_ticks_fun(const struct list_elem *a, const struct list_elem *b, const void *aux) { //?
 	struct thread* a_thread= list_entry(a, struct thread, elem);
 	struct thread* b_thread= list_entry(b, struct thread, elem);
 	return (a_thread->local_ticks<b_thread->local_ticks);
-}
+}//???
+//less_ticks=less_ticks_fun;
 
 void
 thread_init (void) {
@@ -340,16 +343,18 @@ thread_wakeup (int64_t global_ticks) {
 
 
 void
-thread_sleep (int64_t global_ticks) {
+thread_sleep (int64_t local_ticks) {
 	struct thread *curr = thread_current ();
 	enum intr_level old_level;
 
 	//ASSERT (!intr_context ());  //??
 
 	old_level = intr_disable ();
-	if (curr != idle_thread)
-		//list_push_back (&sleep_list, &curr->elem); //must_insert
-		list_insert_ordered(&sleep_list,&curr->elem,less_ticks,0);
+	if (curr != idle_thread) {
+		curr->local_ticks = local_ticks;
+		list_push_back (&sleep_list, &curr->elem); //must_insert
+		//list_insert_ordered(&sleep_list,&curr->elem,less_ticks,0);
+	}
 	do_schedule (THREAD_BLOCKED);
 	intr_set_level (old_level);
 }

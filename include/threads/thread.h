@@ -91,7 +91,7 @@ struct thread {
 	enum thread_status status;          /* Thread state. */
 	char name[16];                      /* Name (for debugging purposes). */
 	int priority;                       /* Priority. */
-	int local_ticks; 					/* local_ticks */
+	int64_t local_ticks; 					/* local_ticks */
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */

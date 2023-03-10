@@ -91,10 +91,10 @@ timer_elapsed (int64_t then) {
 
 /* Suspends execution for approximately TICKS timer ticks. */
 void
-timer_sleep (int64_t ticks) {
+timer_sleep (int64_t durations) {
 	int64_t global_ticks = timer_ticks ();
 	//ASSERT (intr_get_level () == INTR_ON);
-    thread_sleep(global_ticks);
+    thread_sleep(global_ticks + durations);
 }
 
 /* Suspends execution for approximately MS milliseconds. */

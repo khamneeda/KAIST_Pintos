@@ -117,7 +117,7 @@ extern bool thread_mlfqs;
 
 //??
 //typedef bool list_less_func(struct list_elem *a,struct list_elem *b,void * aux);
-bool less_ticks(struct list_elem *,struct list_elem *,void * );
+bool less_ticks(const struct list_elem *,const struct list_elem *,void * );
 void thread_init (void);
 void thread_start (void);
 

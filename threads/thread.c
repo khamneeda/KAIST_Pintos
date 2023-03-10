@@ -99,8 +99,7 @@ static uint64_t gdt[3] = { 0, 0x00af9a000000ffff, 0x00cf92000000ffff };
 
 //bool
 //(*less_ticks)(const struct list_elem *a, const struct list_elem *b, const void *aux) = NULL;
-bool
-less_ticks_fun(const struct list_elem *a, const struct list_elem *b, const void *aux) { //?
+bool less_ticks(const struct list_elem *a, const struct list_elem *b, void *aux) { //?
 	struct thread* a_thread= list_entry(a, struct thread, elem);
 	struct thread* b_thread= list_entry(b, struct thread, elem);
 	return (a_thread->local_ticks<b_thread->local_ticks);
@@ -331,13 +330,17 @@ thread_wakeup (int64_t global_ticks) {
 	if (!list_empty (&sleep_list))
 	{
 		struct thread* t= list_entry(list_front (&sleep_list), struct thread, elem);
-	    if (t->local_ticks <= global_ticks )
+	    while (t->local_ticks <= global_ticks )
         {
           t->status=THREAD_READY;
 		  list_pop_front(&sleep_list);
 		  list_push_back (&ready_list, &t->elem);  //must_insert
           //list_insert_ordered (&ready_list, &t->elem,
-
+		  if (!list_empty (&sleep_list)){
+            t= list_entry(list_front (&sleep_list), struct thread, elem);
+		  }
+		  else
+		  break;
         }
 	}
 }

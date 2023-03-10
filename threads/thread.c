@@ -104,6 +104,11 @@ bool less_ticks(const struct list_elem *a, const struct list_elem *b, void *aux)
 	struct thread* b_thread= list_entry(b, struct thread, elem);
 	return (a_thread->local_ticks<b_thread->local_ticks);
 }//???
+bool less_priority(const struct list_elem *a, const struct list_elem *b, void *aux) { //?
+	struct thread* a_thread= list_entry(a, struct thread, elem);
+	struct thread* b_thread= list_entry(b, struct thread, elem);
+	return (a_thread->priority>b_thread->priority);
+}//???
 //less_ticks=less_ticks_fun;
 
 void
@@ -334,8 +339,8 @@ thread_wakeup (int64_t global_ticks) {
         {
           t->status=THREAD_READY;
 		  list_pop_front(&sleep_list);
-		  list_push_back (&ready_list, &t->elem);  //must_insert
-          //list_insert_ordered(&ready_list, &t->elem,
+		  //list_push_back (&ready_list, &t->elem);  //must_insert
+		  list_insert_ordered(&ready_list,&t->elem,less_priority,0);
 		  if (!list_empty (&sleep_list)){
             t= list_entry(list_front (&sleep_list), struct thread, elem);
 		  }

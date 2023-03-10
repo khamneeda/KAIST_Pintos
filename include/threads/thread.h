@@ -115,8 +115,6 @@ struct thread {
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
 
-//??
-//typedef bool list_less_func(struct list_elem *a,struct list_elem *b,void * aux);
 bool less_ticks(const struct list_elem *,const struct list_elem *,void * );
 bool less_priority(const struct list_elem *,const struct list_elem *,void * );
 void thread_init (void);
@@ -130,6 +128,7 @@ tid_t thread_create (const char *name, int priority, thread_func *, void *);
 
 void thread_block (void);
 void thread_unblock (struct thread *);
+void thread_treason (struct thread *);
 
 struct thread *thread_current (void);
 tid_t thread_tid (void);

@@ -225,6 +225,7 @@ thread_create (const char *name, int priority,
 
 	/* Add to run queue. */
 	//thread_unblock (t);
+	ASSERT (t->status == THREAD_BLOCKED);
 	thread_treason (t);
 	return tid;
 }
@@ -254,25 +255,30 @@ thread_block (void) {
 void
 thread_unblock (struct thread *t) {
 	enum intr_level old_level;
-
 	ASSERT (is_thread (t));
-
 	old_level = intr_disable ();
 	ASSERT (t->status == THREAD_BLOCKED);
+
 	list_push_back (&ready_list, &t->elem);
 	//list_insert_ordered(&ready_list,&t->elem,less_priority,0);
 	t->status = THREAD_READY;
+	
+	
 	intr_set_level (old_level);
 }
+
+/*
+Used outside of timer_interrupt
+*/
 
 void
 thread_treason (struct thread *t) {
 	enum intr_level old_level;
-
 	ASSERT (is_thread (t));
-
 	old_level = intr_disable ();
-	ASSERT (t->status == THREAD_BLOCKED);
+	//ASSERT (t->status == THREAD_BLOCKED); //따로써주기
+
+
     if(thread_get_priority()>=t->priority){
 		list_insert_ordered(&ready_list,&t->elem,less_priority,0);
 		t->status = THREAD_READY;
@@ -280,11 +286,9 @@ thread_treason (struct thread *t) {
 	else{
        	struct thread *curr = thread_current ();
 		if (curr != idle_thread){
-			//list_insert_ordered(&ready_list,&curr->elem,less_priority,0);
-			list_push_front(&ready_list,&curr->elem);
+			list_insert_ordered(&ready_list,&curr->elem,less_priority,0);
 		}
-		list_push_front(&ready_list,&t->elem);
-		//list_insert_ordered(&ready_list,&t->elem,less_priority,0);
+		list_insert_ordered(&ready_list,&t->elem,less_priority,0);
 		do_schedule (THREAD_READY);
 	}
 	intr_set_level (old_level);
@@ -373,13 +377,10 @@ thread_wakeup (int64_t global_ticks) {
 			else{
 				if (curr != idle_thread){
 					list_insert_ordered(&ready_list,&curr->elem,less_priority,0);
-					//list_push_front(&ready_list,&curr->elem);
 				}
 				list_insert_ordered(&ready_list,&t->elem,less_priority,0);
-				//do_schedule (THREAD_READY);
 				intr_yield_on_return();
 			}
-		  //list_insert_ordered(&ready_list,&t->elem,less_priority,0);
 		  if (!list_empty (&sleep_list)){
             t= list_entry(list_front (&sleep_list), struct thread, elem);
 		  }
@@ -412,12 +413,15 @@ thread_sleep (int64_t local_ticks) {
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
+	struct thread* t = list_entry(list_front(&ready_list), struct thread, elem);
+	thread_treason(t);
 }
 
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void) {
 	return thread_current ()->priority;
+	
 }
 
 /* Sets the current thread's nice value to NICE. */

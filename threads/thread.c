@@ -81,21 +81,7 @@ static tid_t allocate_tid (void);
 // Global descriptor table for the thread_start.
 // Because the gdt will be setup after the thread_init, we should
 // setup temporal gdt first.
-static uint64_t gdt[3] = { 0, 0x00af9a000000ffff, 0x00cf92000000ffff };
-
-/* Initializes the threading system by transforming the code
-   that's currently running into a thread.  This can't work in
-   general and it is possible in this case only because loader.S
-   was careful to put the bottom of the stack at a page boundary.
-
-   Also initializes the run queue and the tid lock.
-
-   After calling this function, be sure to initialize the page
-   allocator before trying to create any threads with
-   thread_create().
-
-   It is not safe to call thread_current() until this function
-   finishes. */
+static uint64_t gdt[3] = { 0, 0x00af9a000000ffff, 0x00cf92000000ffff }; //??
 
 bool less_ticks(const struct list_elem *a, const struct list_elem *b, void *aux) { 
 	struct thread* a_thread= list_entry(a, struct thread, elem);
@@ -109,6 +95,20 @@ bool less_priority(const struct list_elem *a, const struct list_elem *b, void *a
 }
 
 
+/* Initializes the threading system by transforming the code
+   that's currently running into a thread.  This can't work in
+   general and it is possible in this case only because loader.S
+   was careful to put the bottom of the stack at a page boundary.
+
+   Also initializes the run queue and the tid lock.
+
+   After calling this function, be sure to initialize the page
+   allocator before trying to create any threads with
+   thread_create(). //##
+
+   It is not safe to call thread_current() until this function
+   finishes. */ //##
+ 
 void
 thread_init (void) {
 	ASSERT (intr_get_level () == INTR_OFF);
@@ -386,7 +386,7 @@ thread_wakeup (int64_t global_ticks) {
             t= list_entry(list_front (&sleep_list), struct thread, elem);
 		  }
 		  else
-		  break;
+		  	break;
         }
 	}
 }
@@ -463,7 +463,7 @@ idle (void *idle_started_ UNUSED) {
 	struct semaphore *idle_started = idle_started_;
 
 	idle_thread = thread_current ();
-	idle_thread->priority=-1; // ??
+	//idle_thread->priority=0; // ??
 	sema_up (idle_started);
 
 	for (;;) {

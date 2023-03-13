@@ -413,8 +413,10 @@ thread_sleep (int64_t local_ticks) {
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
-	struct thread* t = list_entry(list_front(&ready_list), struct thread, elem);
-	thread_treason(t);
+	if(!list_empty(&ready_list)){
+		struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);
+		thread_treason(t);
+	}
 }
 
 /* Returns the current thread's priority. */

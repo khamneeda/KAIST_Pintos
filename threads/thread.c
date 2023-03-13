@@ -366,8 +366,6 @@ thread_wakeup (int64_t global_ticks) {
           t->status=THREAD_READY;
 		  list_pop_front(&sleep_list);
 		  //thread_treason (t);
-          /*
-
 			 if(curr->priority>=t->priority){
 				list_insert_ordered(&ready_list,&t->elem,less_priority,0);
 				t->status = THREAD_READY;
@@ -379,9 +377,9 @@ thread_wakeup (int64_t global_ticks) {
 				}
 				list_insert_ordered(&ready_list,&t->elem,less_priority,0);
 				//do_schedule (THREAD_READY);
+				intr_yield_on_return();
 			}
-          */
-		  list_insert_ordered(&ready_list,&t->elem,less_priority,0);
+		  //list_insert_ordered(&ready_list,&t->elem,less_priority,0);
 		  if (!list_empty (&sleep_list)){
             t= list_entry(list_front (&sleep_list), struct thread, elem);
 		  }

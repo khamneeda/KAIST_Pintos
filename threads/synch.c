@@ -264,6 +264,8 @@ cond_init (struct condition *cond) {
    an atomic operation.  Thus, typically the caller must recheck
    the condition after the wait completes and, if necessary, wait
    again.
+   Mesa: The waking thread A executed continuously after waking thread B
+   Hoare: The waking thread A sleeps and B executed after woke up 
 
    A given condition variable is associated with only a single
    lock, but one lock may be associated with any number of

@@ -95,6 +95,8 @@ bool less_priority(const struct list_elem *a, const struct list_elem *b, void *a
 }
 
 
+
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -226,7 +228,7 @@ thread_create (const char *name, int priority,
 	/* Add to run queue. */
 	//thread_unblock (t);
 	ASSERT (t->status == THREAD_BLOCKED);
-	thread_treason (t);
+	dis_intr_treason (t);
 	return tid;
 }
 
@@ -259,39 +261,52 @@ thread_unblock (struct thread *t) {
 	old_level = intr_disable ();
 	ASSERT (t->status == THREAD_BLOCKED);
 
-	list_push_back (&ready_list, &t->elem);
-	//list_insert_ordered(&ready_list,&t->elem,less_priority,0);
+	//list_push_back (&ready_list, &t->elem);
+	list_insert_ordered(&ready_list,&t->elem,less_priority,0);
 	t->status = THREAD_READY;
 	
 	
 	intr_set_level (old_level);
 }
 
+
 /*
-Used outside of timer_interrupt
+Diable interrupt before calling treason.
+*/
+
+void
+dis_intr_treason (struct thread *t){
+	enum intr_level old_level;
+	ASSERT (is_thread (t));
+	old_level = intr_disable ();
+	
+	thread_treason(t);
+	
+	intr_set_level (old_level);
+}
+
+
+/*
+Used outside of timer_interrupt.
+Interrupt should be disabled outside of treason.
+THREAD_BLOCKED should be ASSERTED outside of treason.
 */
 
 void
 thread_treason (struct thread *t) {
-	enum intr_level old_level;
-	ASSERT (is_thread (t));
-	old_level = intr_disable ();
-	//ASSERT (t->status == THREAD_BLOCKED); //따로써주기
-
-
+	//If current thread's priority is bigger than t. Treason failed.  
     if(thread_get_priority()>=t->priority){
 		list_insert_ordered(&ready_list,&t->elem,less_priority,0);
 		t->status = THREAD_READY;
 	}
-	else{
+	else{ //Treason succeeded.
        	struct thread *curr = thread_current ();
 		if (curr != idle_thread){
 			list_insert_ordered(&ready_list,&curr->elem,less_priority,0);
 		}
-		list_insert_ordered(&ready_list,&t->elem,less_priority,0);
+		list_push_front(&ready_list,&t->elem);
 		do_schedule (THREAD_READY);
 	}
-	intr_set_level (old_level);
 }
 
 /* Returns the name of the running thread. */
@@ -415,7 +430,7 @@ thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
 	if(!list_empty(&ready_list)){
 		struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);
-		thread_treason(t);
+		dis_intr_treason(t);
 	}
 }
 

@@ -293,7 +293,7 @@ cond_wait (struct condition *cond, struct lock *lock) {
 	sema_init (&waiter.semaphore, 0);
 	list_push_back (&cond->waiters, &waiter.elem);
 	lock_release (lock); //sema_up(lock->semaphore)
-	
+	 
 	/*
 	Wait for waiter's semaphore to be up. Down when it becomes 1. 
 	Lock is released only to change waiter's semaphore.

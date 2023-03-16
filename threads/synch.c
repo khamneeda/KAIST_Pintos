@@ -65,7 +65,7 @@ sema_down (struct semaphore *sema) {
 	ASSERT (!intr_context ());
 
 	old_level = intr_disable ();
-	while (sema->value == 0) {
+	while (sema->value == 0) { 
 		//list_push_back (&sema->waiters, &thread_current ()->elem);
 		list_insert_ordered(&sema->waiters, &thread_current()->elem, less_priority, 0);
 		thread_block ();
@@ -275,7 +275,12 @@ cond_init (struct condition *cond) {
    This function may sleep, so it must not be called within an
    interrupt handler.  This function may be called with
    interrupts disabled, but interrupts will be turned back on if
-   we need to sleep. */
+   we need to sleep. 
+   
+   This function exists only for the conditions. Other parts of the
+   monitor are handled by lock and semaphore functions.
+   We only have to consider Conditions in here.
+   */
 void
 cond_wait (struct condition *cond, struct lock *lock) {
 	struct semaphore_elem waiter;
@@ -287,8 +292,14 @@ cond_wait (struct condition *cond, struct lock *lock) {
 
 	sema_init (&waiter.semaphore, 0);
 	list_push_back (&cond->waiters, &waiter.elem);
-	lock_release (lock);
+	lock_release (lock); //sema_up(lock->semaphore)
+	
+	/*
+	Wait for waiter's semaphore to be up. Down when it becomes 1. 
+	Lock 
+	*/
 	sema_down (&waiter.semaphore);
+	//Condition is now signaled.
 	lock_acquire (lock);
 }
 

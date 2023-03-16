@@ -296,7 +296,8 @@ cond_wait (struct condition *cond, struct lock *lock) {
 	
 	/*
 	Wait for waiter's semaphore to be up. Down when it becomes 1. 
-	Lock 
+	Lock is released only to change waiter's semaphore.
+	Lock doesn't need to be considered in here.
 	*/
 	sema_down (&waiter.semaphore);
 	//Condition is now signaled.

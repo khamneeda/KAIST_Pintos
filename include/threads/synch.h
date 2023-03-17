@@ -10,6 +10,7 @@ struct semaphore {
 	struct list waiters;        /* List of waiting threads. */
 };
 
+bool sem_less_priority(const struct list_elem *, const struct list_elem *, void *);
 void sema_init (struct semaphore *, unsigned value);
 void sema_down (struct semaphore *);
 bool sema_try_down (struct semaphore *);

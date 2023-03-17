@@ -281,6 +281,17 @@ cond_init (struct condition *cond) {
    monitor are handled by lock and semaphore functions.
    We only have to consider Conditions in here.
    */
+
+bool sem_less_priority(const struct list_elem* a, const struct list_elem* b, void *aux){
+	struct semaphore* a_sem= &list_entry(a, struct semaphore_elem, elem)->semaphore;
+	struct semaphore* b_sem= &list_entry(b, struct semaphore_elem, elem)->semaphore;
+	if (list_empty(&a_sem->waiters)) return false;
+	if (list_empty(&b_sem->waiters)) return true;
+	struct thread* a_thread= list_entry(list_front(&a_sem->waiters), struct thread, elem);
+	struct thread* b_thread= list_entry(list_front(&b_sem->waiters), struct thread, elem);
+	return (a_thread->priority>b_thread->priority);
+}
+
 void
 cond_wait (struct condition *cond, struct lock *lock) {
 	struct semaphore_elem waiter;
@@ -291,7 +302,8 @@ cond_wait (struct condition *cond, struct lock *lock) {
 	ASSERT (lock_held_by_current_thread (lock));
 
 	sema_init (&waiter.semaphore, 0);
-	list_push_back (&cond->waiters, &waiter.elem);
+	//list_push_back (&cond->waiters, &waiter.elem);
+	list_insert_ordered(&cond->waiters, &waiter.elem, sem_less_priority, 0);
 	lock_release (lock); //sema_up(lock->semaphore)
 	 
 	/*
@@ -319,6 +331,9 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED) {
 	ASSERT (lock_held_by_current_thread (lock));
 
 	if (!list_empty (&cond->waiters))
+
+	    list_sort(&cond->waiters, sem_less_priority, 0);
+
 		sema_up (&list_entry (list_pop_front (&cond->waiters),
 					struct semaphore_elem, elem)->semaphore);
 }

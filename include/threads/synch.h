@@ -4,6 +4,11 @@
 #include <list.h>
 #include <stdbool.h>
 
+struct get_int {
+	int value;
+	struct list_elem elem;  
+};
+
 /* A counting semaphore. */
 struct semaphore {
 	unsigned value;             /* Current value. */
@@ -25,6 +30,8 @@ struct lock {
 
 void lock_init (struct lock *);
 void lock_acquire (struct lock *);
+void donate_priority (struct thread*, int, int);
+
 bool lock_try_acquire (struct lock *);
 void lock_release (struct lock *);
 bool lock_held_by_current_thread (const struct lock *);

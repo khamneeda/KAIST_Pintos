@@ -428,6 +428,17 @@ thread_sleep (int64_t local_ticks) {
 void
 thread_set_priority (int new_priority) {
 	thread_current ()->priority = new_priority;
+	thread_current ()->priority_origin = new_priority;
+	if(!list_empty(&ready_list)){
+		struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);
+		dis_intr_treason(t);
+	}
+}
+
+/* Sets the current thread's priority to donated NEW_PRIORITY. */
+void
+set_donated_priority (int new_priority) {
+	thread_current ()->priority = new_priority;
 	if(!list_empty(&ready_list)){
 		struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);
 		dis_intr_treason(t);

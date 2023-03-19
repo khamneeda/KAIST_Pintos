@@ -9,6 +9,8 @@ struct get_int {
 	struct list_elem elem;  
 };
 
+bool less_int(const struct list_elem*, const struct list_elem*, void*);
+
 /* A counting semaphore. */
 struct semaphore {
 	unsigned value;             /* Current value. */
@@ -21,7 +23,7 @@ void sema_down (struct semaphore *);
 bool sema_try_down (struct semaphore *);
 void sema_up (struct semaphore *);
 void sema_self_test (void);
-
+ 
 /* Lock. */
 struct lock {
 	struct thread *holder;      /* Thread holding lock (for debugging). */

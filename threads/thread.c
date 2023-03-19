@@ -544,7 +544,6 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->priority = priority;
 	t->local_ticks = 0;
 	t->priority_origin = priority;
-	t->priority_origin = priority;
 	//list_init(&t->donated_priority_list);
     t->pressing_lock = NULL;
 	t->magic = THREAD_MAGIC;

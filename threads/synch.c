@@ -220,7 +220,6 @@ donate_priority (struct thread* master, int level, int new_priority){
 	}
 */
     if (new_priority > thread_current()->pressing_lock->holder-> priority){
-   		thread_current()->pressing_lock->holder->priority_origin=thread_current()->pressing_lock->holder->priority;
     	set_donated_priority(master, new_priority);
 	}
 }

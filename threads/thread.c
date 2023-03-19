@@ -213,6 +213,9 @@ thread_create (const char *name, int priority,
 	init_thread (t, name, priority);
 	t->local_ticks = 0;
 	tid = t->tid = allocate_tid ();
+	t->priority_origin = priority;
+	list_init(&t->donated_priority_list);
+	t->pressing_lock = NULL;
 
 	/* Call the kernel_thread if it scheduled.
 	 * Note) rdi is 1st argument, and rsi is 2nd argument. */

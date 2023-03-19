@@ -211,7 +211,11 @@ void
 donate_priority (struct thread* master, int level, int new_priority){
 /*	if ((&master->pressing_lock != NULL) && (level < 8))
 		donate_priority(&master->pressing_lock->holder, level + 1, new_priority);
+<<<<<<< HEAD
 	if (new_priority >= &master->priority){
+=======
+	if (new_priority >= &master-> priority){
+>>>>>>> cc6277ddefd5d91425d4c3cbfce7d4e022cfcacb
 		struct get_int* master_priority;
 		master_priority->value = &master_priority;
 

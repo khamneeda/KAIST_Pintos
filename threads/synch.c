@@ -203,6 +203,7 @@ lock_acquire (struct lock *lock) {
 	}
 
 	sema_down (&lock->semaphore);
+	thread_current()->pressing_lock = NULL;
 	lock->holder = thread_current ();
 }
 
@@ -210,7 +211,7 @@ void
 donate_priority (struct thread* master, int level, int new_priority){
 /*	if ((&master->pressing_lock != NULL) && (level < 8))
 		donate_priority(&master->pressing_lock->holder, level + 1, new_priority);
-	if (new_priority >= &master-> priority){
+	if (new_priority >= &master->priority){
 		struct get_int* master_priority;
 		master_priority->value = &master_priority;
 

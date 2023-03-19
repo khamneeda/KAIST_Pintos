@@ -214,7 +214,6 @@ thread_create (const char *name, int priority,
 	//t->priority_origin=priority; init_thread에 넣음
 	tid = t->tid = allocate_tid ();
 	t->priority_origin = priority;
-	list_init(&t->donated_priority_list);
 	t->pressing_lock = NULL;
 
 	/* Call the kernel_thread if it scheduled.

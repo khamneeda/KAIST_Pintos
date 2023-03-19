@@ -83,12 +83,12 @@ static tid_t allocate_tid (void);
 // setup temporal gdt first.
 static uint64_t gdt[3] = { 0, 0x00af9a000000ffff, 0x00cf92000000ffff }; //??
 
-bool less_ticks(const struct list_elem *a, const struct list_elem *b, void *aux) { 
+bool less_ticks(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) { 
 	struct thread* a_thread= list_entry(a, struct thread, elem);
 	struct thread* b_thread= list_entry(b, struct thread, elem);
 	return (a_thread->local_ticks<b_thread->local_ticks);
 }
-bool less_priority(const struct list_elem *a, const struct list_elem *b, void *aux) { 
+bool less_priority(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) { 
 	struct thread* a_thread= list_entry(a, struct thread, elem);
 	struct thread* b_thread= list_entry(b, struct thread, elem);
 	return (a_thread->priority>b_thread->priority);

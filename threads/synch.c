@@ -196,6 +196,8 @@ lock_acquire (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (!intr_context ());
 	ASSERT (!lock_held_by_current_thread (lock));
+	enum intr_level old_level;
+	old_level = intr_disable ();
 
 	if (lock->holder != NULL){
 		thread_current()->pressing_lock = lock;
@@ -205,23 +207,19 @@ lock_acquire (struct lock *lock) {
 	sema_down (&lock->semaphore);
 	thread_current()->pressing_lock = NULL;
 	lock->holder = thread_current ();
+	intr_set_level (old_level);
 }
 
 void
 donate_priority (struct thread* master, int level, int new_priority){
-/*	if ((&master->pressing_lock != NULL) && (level < 8))
-		donate_priority(&master->pressing_lock->holder, level + 1, new_priority);
-	if (new_priority >= &master->priority){
+	if ((master->pressing_lock != NULL) && (level < 8)) // &master->pressing_lock에서 바꿈
+		donate_priority(master->pressing_lock->holder, level + 1, new_priority); 
+	if (new_priority >= master->priority){ //&master->priority에서 바꿈
 		struct get_int* master_priority;
-		master_priority->value = &master_priority;
+		master_priority->value = master->priority; //마찬가지
 
-		list_insert_ordered(&master->donated_priority_list, &master_priority->elem,
-		less_int, 0);
-		set_donated_priority(new_priority);
-	}
-*/
-    if (new_priority > thread_current()->pressing_lock->holder-> priority){
-    	set_donated_priority(master, new_priority);
+		list_insert_ordered(&master->donated_priority_list, &master_priority->elem,	less_int, 0);
+		set_donated_priority(master, new_priority);
 	}
 }
 
@@ -259,6 +257,9 @@ lock_release (struct lock *lock) {
 
 	lock->holder = NULL;
     thread_current()->priority=thread_current()->priority_origin; ///need to change in multiple!!!!!!
+
+	//리스트에서 팝할때 두번 해줘야함. 현재 priority도 넣어줘서
+
 	sema_up (&lock->semaphore);
 }
 
@@ -316,7 +317,7 @@ cond_init (struct condition *cond) {
    We only have to consider Conditions in here.
    */
 
-bool sem_less_priority(const struct list_elem* a, const struct list_elem* b, void *aux){
+bool sem_less_priority(const struct list_elem* a, const struct list_elem* b, void *aux UNUSED){
 	struct semaphore* a_sem= &list_entry(a, struct semaphore_elem, elem)->semaphore;
 	struct semaphore* b_sem= &list_entry(b, struct semaphore_elem, elem)->semaphore;
 	if (list_empty(&a_sem->waiters)) return false;

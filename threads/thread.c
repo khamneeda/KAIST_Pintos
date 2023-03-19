@@ -211,7 +211,7 @@ thread_create (const char *name, int priority,
 
 	/* Initialize thread. */
 	init_thread (t, name, priority);
-	t->local_ticks = 0;
+	//t->priority_origin=priority; init_thread에 넣음
 	tid = t->tid = allocate_tid ();
 
 	/* Call the kernel_thread if it scheduled.
@@ -437,8 +437,9 @@ thread_set_priority (int new_priority) {
 
 /* Sets the current thread's priority to donated NEW_PRIORITY. */
 void
-set_donated_priority (int new_priority) {
-	thread_current ()->priority = new_priority;
+set_donated_priority (struct thread* target_thread, int new_priority) {
+	target_thread->priority = new_priority;
+	list_sort(&ready_list, less_priority, 0);
 	if(!list_empty(&ready_list)){
 		struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);
 		dis_intr_treason(t);
@@ -541,6 +542,11 @@ init_thread (struct thread *t, const char *name, int priority) {
 	strlcpy (t->name, name, sizeof t->name);
 	t->tf.rsp = (uint64_t) t + PGSIZE - sizeof (void *);
 	t->priority = priority;
+	t->local_ticks = 0;
+	t->priority_origin = priority;
+	t->priority_origin = priority;
+	//list_init(&t->donated_priority_list);
+    t->pressing_lock = NULL;
 	t->magic = THREAD_MAGIC;
 }
 

@@ -32,10 +32,10 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
-bool less_int(const struct list_elem *a, const struct list_elem *b, void *aux) { 
-	int a_int = list_entry(a, struct get_int, elem)->value;
-	int b_int = list_entry(b, struct get_int, elem)->value;
-	return (a_int > b_int);
+bool less_int(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) {
+struct get_int* a_int = list_entry(a, struct get_int, elem);
+struct get_int* b_int = list_entry(b, struct get_int, elem);
+return (a_int->value > b_int->value);
 }
 
 
@@ -198,8 +198,8 @@ lock_acquire (struct lock *lock) {
 	ASSERT (!lock_held_by_current_thread (lock));
 
 	if (lock->holder != NULL){
-		thread_current()->pressing_lock = &lock;
-		donate_priority(&lock->holder, 0, thread_current()->priority);
+		thread_current()->pressing_lock = lock;
+		donate_priority(lock->holder, 0, thread_current()->priority);
 	}
 
 	sema_down (&lock->semaphore);
@@ -208,11 +208,20 @@ lock_acquire (struct lock *lock) {
 
 void
 donate_priority (struct thread* master, int level, int new_priority){
-	if ((&master->pressing_lock != NULL) && (level < 8))
+/*	if ((&master->pressing_lock != NULL) && (level < 8))
 		donate_priority(&master->pressing_lock->holder, level + 1, new_priority);
 	if (new_priority >= &master-> priority){
-		list_insert_ordered(&master->donated_priority_list, &master->priority, less_int, 0);
+		struct get_int* master_priority;
+		master_priority->value = &master_priority;
+
+		list_insert_ordered(&master->donated_priority_list, &master_priority->elem,
+		less_int, 0);
 		set_donated_priority(new_priority);
+	}
+*/
+    if (new_priority > thread_current()->pressing_lock->holder-> priority){
+   		thread_current()->pressing_lock->holder->priority_origin=thread_current()->pressing_lock->holder->priority;
+    	set_donated_priority(master, new_priority);
 	}
 }
 
@@ -249,6 +258,7 @@ lock_release (struct lock *lock) {
 	ASSERT (lock_held_by_current_thread (lock));
 
 	lock->holder = NULL;
+    thread_current()->priority=thread_current()->priority_origin; ///need to change in multiple!!!!!!
 	sema_up (&lock->semaphore);
 }
 

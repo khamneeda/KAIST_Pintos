@@ -194,7 +194,7 @@ lock_acquire (struct lock *lock) {
 
 	if (lock->holder != NULL){
 		thread_current()->pressing_lock = lock;
-		donate_priority(lock->holder, 0, thread_current()->priority);
+		donate_priority(lock->holder, thread_current(), thread_current()->priority, 0);
 	}
 
 	sema_down (&lock->semaphore);
@@ -204,23 +204,20 @@ lock_acquire (struct lock *lock) {
 }
 
 void
-donate_priority (struct thread* master, int level, int new_priority){
-	if ((master->pressing_lock != NULL) && (level < 8)) // &master->pressing_lock에서 바꿈
-		donate_priority(master->pressing_lock->holder, level + 1, new_priority); 
-	if ((new_priority >= master->priority) && (new_priority > master->priority_origin)){ //&master->priority에서 바꿈
+donate_priority (struct thread* holder, struct thread* acqurirer, int new_priority, int level){
+	if ((holder->pressing_lock != NULL) && (level < 8)) 
+		donate_priority(holder->pressing_lock->holder, holder, new_priority, level + 1); 
 
-		list_insert_ordered(&master->donated_thread_list, &master->donated_elem, less_priority, 0);
-		set_donated_priority(master, new_priority);
-
-
-		// struct get_int* master_priority;
-		// master_priority->value = master->priority; //마찬가지
-
-		// list_insert_ordered(&master->donated_priority_list, &master_priority->elem,	less_int, 0);
-		// set_donated_priority(master, new_priority);
+	if ((new_priority >= holder->priority) && (new_priority > holder->priority_origin)){ 
+		if(level=0){
+		list_insert_ordered(&holder->donated_thread_list, &acqurirer->donated_elem, less_priority, 0);
+		set_donated_priority(holder, new_priority);
+		}
+	 	else{
+		set_donated_priority(holder, new_priority);
+		}
 	}
 }
-
 
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -255,12 +252,13 @@ lock_release (struct lock *lock) {
 	struct thread* curr=thread_current();
 	lock->holder = NULL;
 
+    //ASSERT(list_empty(&curr->donated_thread_list));
 	if(list_empty(&curr->donated_thread_list)){
 	    curr->priority=curr->priority_origin;
 	}
 	else{
 		list_sort(&curr->donated_thread_list,less_priority,0);
- 		curr->priority=list_entry(list_pop_front(&curr->donated_thread_list), struct thread, elem)->priority;
+ 		curr->priority=list_entry(list_pop_front(&curr->donated_thread_list), struct thread, donated_elem)->priority;
 	}
 
 

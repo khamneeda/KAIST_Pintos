@@ -252,16 +252,17 @@ void
 lock_release (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (lock_held_by_current_thread (lock));
-	struct thread* t=thread_current();
+	struct thread* curr=thread_current();
 	lock->holder = NULL;
 
-		if(list_empty(&thread_current()->donated_priority_list)){
-		thread_current()->priority=thread_current()->priority_origin;
-		}
-		else{
- 		thread_current()->priority=list_entry(list_pop_front(&thread_current()->donated_priority_list), struct get_int, elem)->value;
-		}
-    //thread_current()->priority=thread_current()->priority_origin; ///need to change in multiple!!!!!!
+	if(list_empty(&curr->donated_thread_list)){
+	    curr->priority=curr->priority_origin;
+	}
+	else{
+		list_sort(&curr->donated_thread_list,less_priority,0);
+ 		curr->priority=list_entry(list_pop_front(&curr->donated_thread_list), struct thread, elem)->priority;
+	}
+
 
 	sema_up (&lock->semaphore);
 }

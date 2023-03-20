@@ -93,7 +93,8 @@ struct thread {
 	int priority;                       /* Priority. */
 	int64_t local_ticks; 					/* local_ticks */
 	int priority_origin;				/* Given priority. Not donated */
-	struct list donated_priority_list;	/* List of donated priority */
+	struct list donated_thread_list;	/* List of donated priority */
+	struct list_elem donated_elem;     /* List element for donated_thread_list*/
 	struct lock* pressing_lock;			/* Lock on thread */
 
 	/* Shared between thread.c and synch.c. */

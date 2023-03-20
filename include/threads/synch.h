@@ -4,12 +4,6 @@
 #include <list.h>
 #include <stdbool.h>
 
-struct get_int {
-	int value;
-	struct list_elem elem;  
-};
-
-bool less_int(const struct list_elem*, const struct list_elem*, void*);
 
 /* A counting semaphore. */
 struct semaphore {

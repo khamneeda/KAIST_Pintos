@@ -256,9 +256,19 @@ lock_release (struct lock *lock) {
 	ASSERT (lock_held_by_current_thread (lock));
 
 	lock->holder = NULL;
-    thread_current()->priority=thread_current()->priority_origin; ///need to change in multiple!!!!!!
 
-	//리스트에서 팝할때 두번 해줘야함. 현재 priority도 넣어줘서
+	
+	if(!list_empty(&thread_current()->donated_priority_list)){
+		list_pop_front(&thread_current()->donated_priority_list);
+
+		if(list_empty(&thread_current()->donated_priority_list)){
+		thread_current()->priority=thread_current()->priority_origin;
+		}
+		else{
+ 		thread_current()->priority=list_entry(list_front(&thread_current()->donated_priority_list), struct get_int, elem)->value;
+		}
+	}
+    //thread_current()->priority=thread_current()->priority_origin; ///need to change in multiple!!!!!!
 
 	sema_up (&lock->semaphore);
 }

@@ -207,12 +207,17 @@ void
 donate_priority (struct thread* master, int level, int new_priority){
 	if ((master->pressing_lock != NULL) && (level < 8)) // &master->pressing_lock에서 바꿈
 		donate_priority(master->pressing_lock->holder, level + 1, new_priority); 
-	if (new_priority >= master->priority && new_priority > master->priority_origin){ //&master->priority에서 바꿈
-		struct get_int* master_priority;
-		master_priority->value = master->priority; //마찬가지
+	if ((new_priority >= master->priority) && (new_priority > master->priority_origin)){ //&master->priority에서 바꿈
 
-		list_insert_ordered(&master->donated_priority_list, &master_priority->elem,	less_int, 0);
+		list_insert_ordered(&master->donated_thread_list, &master->donated_elem, less_priority, 0);
 		set_donated_priority(master, new_priority);
+
+
+		// struct get_int* master_priority;
+		// master_priority->value = master->priority; //마찬가지
+
+		// list_insert_ordered(&master->donated_priority_list, &master_priority->elem,	less_int, 0);
+		// set_donated_priority(master, new_priority);
 	}
 }
 

@@ -252,16 +252,42 @@ void
 lock_release (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (lock_held_by_current_thread (lock));
-	struct thread* curr=thread_current();
 	lock->holder = NULL;
 
-	if(list_empty(&curr->donated_thread_list)){
-	    curr->priority=curr->priority_origin;
+	/*
+	리스트에서 팝하는거 찾는거 muliple에서 바꿔줘야됨
+	multiple에서는 if든 while이든 쓰기
+*/
+
+	if (!list_empty(&lock->holder->donated_thread_list)){
+		list_pop_front(&lock->holder->donated_thread_list);
 	}
-	else{
-		list_sort(&curr->donated_thread_list,less_priority,0);
- 		curr->priority=list_entry(list_pop_front(&curr->donated_thread_list), struct thread, elem)->priority;
+/*
+	multiple에서는 우선순위 고려해서 바꿔줘야함
+*/
+	lock->holder->priority = lock->holder->priority_origin;
+
+
+
+
+/*
+multiple 포함용 코드
+
+방안 1. entry 수만큼 돌리고, 마지막에 priority로 소팅
+	if (!list_empty(&lock->holder->donated_thread_list)){
+		for (int i=0; i=list_size(&lock->holder->donated_thread_list); i++){
+			struct list_elem* e = list_pop_front(&lock->holder->donated_thread_list);
+			if (!(list_entry(e, struct thread, donated_elem)->pressing_lock == lock))
+				list_push_back(&lock->holer->donated_thread_list, e);
+		}
+		list_sort(&lock->holder->donated_thread_list, less_priority, 0);
+		lock->holder->priority = list_entry(list_begin(&lock->holder->donated_thread_list), struct thread, donated_elem)->priority;
+
+	} else {
+		lock->holder->priority = lock->holder->priority_origin;
 	}
+
+*/
 
 
 	sema_up (&lock->semaphore);

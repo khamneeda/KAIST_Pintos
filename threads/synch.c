@@ -209,7 +209,7 @@ donate_priority (struct thread* holder, struct thread* acqurirer, int new_priori
 		donate_priority(holder->pressing_lock->holder, holder, new_priority, level + 1); 
 
 	if ((new_priority >= holder->priority) && (new_priority > holder->priority_origin)){ 
-		if(level=0){
+		if(level==0){
 		list_insert_ordered(&holder->donated_thread_list, &acqurirer->donated_elem, less_priority, 0);
 		set_donated_priority(holder, new_priority);
 		}

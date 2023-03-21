@@ -93,9 +93,11 @@ bool less_priority(const struct list_elem *a, const struct list_elem *b, void *a
 	struct thread* b_thread= list_entry(b, struct thread, elem);
 	return (a_thread->priority>b_thread->priority);
 }
-
-
-
+bool less_donated_priority(const struct list_elem *a, const struct list_elem *b, void *aux UNUSED) { 
+	struct thread* a_thread= list_entry(a, struct thread, donated_elem);
+	struct thread* b_thread= list_entry(b, struct thread, donated_elem);
+	return (a_thread->priority>b_thread->priority);
+}
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -213,8 +215,6 @@ thread_create (const char *name, int priority,
 	init_thread (t, name, priority);
 	//t->priority_origin=priority; init_thread에 넣음
 	tid = t->tid = allocate_tid ();
-	t->priority_origin = priority;
-	t->pressing_lock = NULL;
 
 	/* Call the kernel_thread if it scheduled.
 	 * Note) rdi is 1st argument, and rsi is 2nd argument. */
@@ -429,7 +429,9 @@ thread_sleep (int64_t local_ticks) {
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
+	if(thread_current ()->priority == thread_current ()->priority_origin ){
 	thread_current ()->priority = new_priority;
+	}
 	thread_current ()->priority_origin = new_priority;
 	if(!list_empty(&ready_list)){
 		struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);

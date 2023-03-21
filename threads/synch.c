@@ -65,6 +65,7 @@ sema_down (struct semaphore *sema) {
 	ASSERT (!intr_context ());
 
 	old_level = intr_disable ();
+	list_sort(&sema->waiters, less_priority, 0);
 	while (sema->value == 0) { 
 		//list_push_back (&sema->waiters, &thread_current ()->elem);
 		list_insert_ordered(&sema->waiters, &thread_current()->elem, less_priority, 0);
@@ -176,6 +177,7 @@ lock_init (struct lock *lock) {
 	sema_init (&lock->semaphore, 1);
 }
 
+
 /* Acquires LOCK, sleeping until it becomes available if
    necessary.  The lock must not already be held by the current
    thread.
@@ -189,32 +191,29 @@ lock_acquire (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (!intr_context ());
 	ASSERT (!lock_held_by_current_thread (lock));
-	enum intr_level old_level;
-	old_level = intr_disable ();
 
 	if (lock->holder != NULL){
+		struct thread * curr = thread_current(); 
 		thread_current()->pressing_lock = lock;
-		donate_priority(lock->holder, thread_current(), thread_current()->priority, 0);
+		list_insert_ordered(&(lock->holder->donated_thread_list), &(curr->donated_elem), less_donated_priority, 0);
+		donate_priority(lock->holder, curr->priority);
 	}
 
 	sema_down (&lock->semaphore);
 	thread_current()->pressing_lock = NULL;
 	lock->holder = thread_current ();
-	intr_set_level (old_level);
 }
 
 void
-donate_priority (struct thread* holder, struct thread* acqurirer, int new_priority, int level){
-	if ((holder->pressing_lock != NULL) && (level < 8)) 
-		donate_priority(holder->pressing_lock->holder, holder, new_priority, level + 1); 
-
+donate_priority (struct thread* holder, int new_priority){
 	if ((new_priority >= holder->priority) && (new_priority > holder->priority_origin)){ 
-		if(level=0){
-		list_insert_ordered(&holder->donated_thread_list, &acqurirer->donated_elem, less_priority, 0);
-		set_donated_priority(holder, new_priority);
-		}
-	 	else{
-		set_donated_priority(holder, new_priority);
+		holder->priority=new_priority;
+		int level= 0;
+		struct thread * now_holder = holder;
+		while ( level<8 && now_holder->pressing_lock!=NULL ){
+			now_holder= now_holder->pressing_lock->holder;
+			now_holder->priority = new_priority;
+			level++;
 		}
 	}
 }
@@ -259,36 +258,29 @@ lock_release (struct lock *lock) {
 	if (!list_empty(&lock->holder->donated_thread_list)){
 		list_pop_front(&lock->holder->donated_thread_list);
 	}
-/*
-	multiple에서는 우선순위 고려해서 바꿔줘야함
-*/
-	lock->holder->priority = lock->holder->priority_origin;
-
-
-
-
-/*
-multiple 포함용 코드
-
-방안 1. entry 수만큼 돌리고, 마지막에 priority로 소팅
-	if (!list_empty(&lock->holder->donated_thread_list)){
-		for (int i=0; i=list_size(&lock->holder->donated_thread_list); i++){
-			struct list_elem* e = list_pop_front(&lock->holder->donated_thread_list);
-			if (!(list_entry(e, struct thread, donated_elem)->pressing_lock == lock))
-				list_push_back(&lock->holer->donated_thread_list, e);
+	else{
+		struct list_elem* a_list_elem = list_front(&curr->donated_thread_list);
+		while (a_list_elem!=list_tail(&curr->donated_thread_list)&&a_list_elem->next!=NULL)
+		{
+			
+			struct thread* a_thread= list_entry(a_list_elem, struct thread, donated_elem);
+			if(a_thread->pressing_lock==lock){
+				list_remove(a_list_elem);
+			}
+			a_list_elem=a_list_elem->next;
 		}
-		list_sort(&lock->holder->donated_thread_list, less_priority, 0);
-		lock->holder->priority = list_entry(list_begin(&lock->holder->donated_thread_list), struct thread, donated_elem)->priority;
-
-	} else {
-		lock->holder->priority = lock->holder->priority_origin;
+		
+		if(list_empty(&curr->donated_thread_list)){
+	    	curr->priority=curr->priority_origin;
+		}
+		else{
+			list_sort(&curr->donated_thread_list,less_donated_priority,0);
+ 			curr->priority=list_entry(list_front(&curr->donated_thread_list), struct thread, donated_elem)->priority;
+		}
 	}
-
-*/
-
-
 	sema_up (&lock->semaphore);
 }
+
 
 /* Returns true if the current thread holds LOCK, false
    otherwise.  (Note that testing whether some other thread holds

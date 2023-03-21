@@ -10,6 +10,7 @@
 #endif
 
 
+
 /* States in a thread's life cycle. */
 enum thread_status {
 	THREAD_RUNNING,     /* Running thread. */
@@ -93,9 +94,10 @@ struct thread {
 	int priority;                       /* Priority. */
 	int64_t local_ticks; 					/* local_ticks */
 	int priority_origin;				/* Given priority. Not donated */
+	struct lock* pressing_lock;			/* Lock on thread */
+
 	struct list donated_thread_list;	/* List of donated priority */
 	struct list_elem donated_elem;     /* List element for donated_thread_list*/
-	struct lock* pressing_lock;			/* Lock on thread */
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */
@@ -121,6 +123,8 @@ extern bool thread_mlfqs;
 
 bool less_ticks(const struct list_elem *,const struct list_elem *,void * );
 bool less_priority(const struct list_elem *,const struct list_elem *,void * );
+bool less_donated_priority(const struct list_elem *,const struct list_elem *,void * );
+
 void thread_init (void);
 void thread_start (void);
 

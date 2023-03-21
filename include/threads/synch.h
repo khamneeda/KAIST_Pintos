@@ -26,7 +26,7 @@ struct lock {
 
 void lock_init (struct lock *);
 void lock_acquire (struct lock *);
-void donate_priority (struct thread*, int, int);
+void donate_priority (struct thread*, int);
 
 bool lock_try_acquire (struct lock *);
 void lock_release (struct lock *);

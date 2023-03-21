@@ -65,6 +65,7 @@ sema_down (struct semaphore *sema) {
 	ASSERT (!intr_context ());
 
 	old_level = intr_disable ();
+	list_sort(&sema->waiters, less_priority, 0);
 	while (sema->value == 0) { 
 		//list_push_back (&sema->waiters, &thread_current ()->elem);
 		list_insert_ordered(&sema->waiters, &thread_current()->elem, less_priority, 0);
@@ -193,8 +194,11 @@ lock_acquire (struct lock *lock) {
 	old_level = intr_disable ();
 
 	if (lock->holder != NULL){
+		struct thread * curr = thread_current(); 
 		thread_current()->pressing_lock = lock;
-		donate_priority(lock->holder, 0, thread_current()->priority);
+		//list_insert_ordered(&lock->holder->donated_thread_list, &thread_current()->donated_elem, less_priority, 0);
+		donate_priority(lock->holder, curr->priority);
+		//set_donated_priority (lock->holder, curr->priority);
 	}
 
 	sema_down (&lock->semaphore);
@@ -202,7 +206,7 @@ lock_acquire (struct lock *lock) {
 	lock->holder = thread_current ();
 	intr_set_level (old_level);
 }
-
+/*
 void
 donate_priority (struct thread* master, int level, int new_priority){
 	if ((master->pressing_lock != NULL) && (level < 8)) // &master->pressing_lock에서 바꿈
@@ -211,16 +215,22 @@ donate_priority (struct thread* master, int level, int new_priority){
 
 		list_insert_ordered(&master->donated_thread_list, &master->donated_elem, less_priority, 0);
 		set_donated_priority(master, new_priority);
-
-
-		// struct get_int* master_priority;
-		// master_priority->value = master->priority; //마찬가지
-
-		// list_insert_ordered(&master->donated_priority_list, &master_priority->elem,	less_int, 0);
-		// set_donated_priority(master, new_priority);
 	}
 }
-
+*/
+void
+donate_priority (struct thread* holder, int new_priority){
+	if ((new_priority >= holder->priority) && (new_priority > holder->priority_origin)){ 
+		holder->priority=new_priority;
+		int level= 0;
+		struct thread * now_holder = holder;
+		while ( level<8 && now_holder->pressing_lock!=NULL ){
+			now_holder= now_holder->pressing_lock->holder;
+			now_holder->priority = new_priority;
+			level++;
+		}
+	}
+}
 
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -255,15 +265,16 @@ lock_release (struct lock *lock) {
 	struct thread* curr=thread_current();
 	lock->holder = NULL;
 
+	curr->priority=curr->priority_origin;
+
+/*
 	if(list_empty(&curr->donated_thread_list)){
 	    curr->priority=curr->priority_origin;
 	}
 	else{
 		list_sort(&curr->donated_thread_list,less_priority,0);
- 		curr->priority=list_entry(list_pop_front(&curr->donated_thread_list), struct thread, elem)->priority;
-	}
-
-
+ 		curr->priority=list_entry(list_pop_front(&curr->donated_thread_list), struct thread, donated_elem)->priority;
+	}*/
 	sema_up (&lock->semaphore);
 }
 

@@ -197,7 +197,6 @@ lock_acquire (struct lock *lock) {
 		thread_current()->pressing_lock = lock;
 		list_insert_ordered(&(lock->holder->donated_thread_list), &(curr->donated_elem), less_donated_priority, 0);
 		donate_priority(lock->holder, curr->priority);
-		//set_donated_priority (lock->holder, curr->priority);
 	}
 
 	sema_down (&lock->semaphore);
@@ -252,30 +251,27 @@ lock_release (struct lock *lock) {
 	struct thread* curr=thread_current();
 	lock->holder = NULL;
 
-	//curr->priority=curr->priority_origin;
-    //thread_print();
 	if(list_empty(&curr->donated_thread_list)){
 	    curr->priority=curr->priority_origin;
 	}
 	else{
 		struct list_elem* a_list_elem = list_front(&curr->donated_thread_list);
-		while (a_list_elem!=list_tail(&curr->donated_thread_list))
+		while (a_list_elem!=list_tail(&curr->donated_thread_list)&&a_list_elem->next!=NULL)
 		{
 			
 			struct thread* a_thread= list_entry(a_list_elem, struct thread, donated_elem);
 			if(a_thread->pressing_lock==lock){
 				list_remove(a_list_elem);
-				break;
 			}
 			a_list_elem=a_list_elem->next;
 		}
 		
 		if(list_empty(&curr->donated_thread_list)){
-	    curr->priority=curr->priority_origin;
+	    	curr->priority=curr->priority_origin;
 		}
 		else{
-		list_sort(&curr->donated_thread_list,less_donated_priority,0);
- 		curr->priority=list_entry(list_front(&curr->donated_thread_list), struct thread, donated_elem)->priority;
+			list_sort(&curr->donated_thread_list,less_donated_priority,0);
+ 			curr->priority=list_entry(list_front(&curr->donated_thread_list), struct thread, donated_elem)->priority;
 		}
 	}
 	sema_up (&lock->semaphore);

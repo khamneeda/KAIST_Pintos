@@ -248,15 +248,11 @@ void
 lock_release (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (lock_held_by_current_thread (lock));
+	struct thread* curr=thread_current();
 	lock->holder = NULL;
 
-	/*
-	리스트에서 팝하는거 찾는거 muliple에서 바꿔줘야됨
-	multiple에서는 if든 while이든 쓰기
-*/
-
-	if (!list_empty(&lock->holder->donated_thread_list)){
-		list_pop_front(&lock->holder->donated_thread_list);
+	if(list_empty(&curr->donated_thread_list)){
+	    curr->priority=curr->priority_origin;
 	}
 	else{
 		struct list_elem* a_list_elem = list_front(&curr->donated_thread_list);

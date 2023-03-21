@@ -177,6 +177,7 @@ lock_init (struct lock *lock) {
 	sema_init (&lock->semaphore, 1);
 }
 
+
 /* Acquires LOCK, sleeping until it becomes available if
    necessary.  The lock must not already be held by the current
    thread.
@@ -190,13 +191,11 @@ lock_acquire (struct lock *lock) {
 	ASSERT (lock != NULL);
 	ASSERT (!intr_context ());
 	ASSERT (!lock_held_by_current_thread (lock));
-	enum intr_level old_level;
-	old_level = intr_disable ();
 
 	if (lock->holder != NULL){
 		struct thread * curr = thread_current(); 
 		thread_current()->pressing_lock = lock;
-		//list_insert_ordered(&lock->holder->donated_thread_list, &thread_current()->donated_elem, less_priority, 0);
+		list_insert_ordered(&(lock->holder->donated_thread_list), &(curr->donated_elem), less_donated_priority, 0);
 		donate_priority(lock->holder, curr->priority);
 		//set_donated_priority (lock->holder, curr->priority);
 	}
@@ -204,20 +203,8 @@ lock_acquire (struct lock *lock) {
 	sema_down (&lock->semaphore);
 	thread_current()->pressing_lock = NULL;
 	lock->holder = thread_current ();
-	intr_set_level (old_level);
 }
-/*
-void
-donate_priority (struct thread* master, int level, int new_priority){
-	if ((master->pressing_lock != NULL) && (level < 8)) // &master->pressing_lock에서 바꿈
-		donate_priority(master->pressing_lock->holder, level + 1, new_priority); 
-	if ((new_priority >= master->priority) && (new_priority > master->priority_origin)){ //&master->priority에서 바꿈
 
-		list_insert_ordered(&master->donated_thread_list, &master->donated_elem, less_priority, 0);
-		set_donated_priority(master, new_priority);
-	}
-}
-*/
 void
 donate_priority (struct thread* holder, int new_priority){
 	if ((new_priority >= holder->priority) && (new_priority > holder->priority_origin)){ 
@@ -265,18 +252,35 @@ lock_release (struct lock *lock) {
 	struct thread* curr=thread_current();
 	lock->holder = NULL;
 
-	curr->priority=curr->priority_origin;
-
-/*
+	//curr->priority=curr->priority_origin;
+    //thread_print();
 	if(list_empty(&curr->donated_thread_list)){
 	    curr->priority=curr->priority_origin;
 	}
 	else{
-		list_sort(&curr->donated_thread_list,less_priority,0);
- 		curr->priority=list_entry(list_pop_front(&curr->donated_thread_list), struct thread, donated_elem)->priority;
-	}*/
+		struct list_elem* a_list_elem = list_front(&curr->donated_thread_list);
+		while (a_list_elem!=list_tail(&curr->donated_thread_list))
+		{
+			
+			struct thread* a_thread= list_entry(a_list_elem, struct thread, donated_elem);
+			if(a_thread->pressing_lock==lock){
+				list_remove(a_list_elem);
+				break;
+			}
+			a_list_elem=a_list_elem->next;
+		}
+		
+		if(list_empty(&curr->donated_thread_list)){
+	    curr->priority=curr->priority_origin;
+		}
+		else{
+		list_sort(&curr->donated_thread_list,less_donated_priority,0);
+ 		curr->priority=list_entry(list_front(&curr->donated_thread_list), struct thread, donated_elem)->priority;
+		}
+	}
 	sema_up (&lock->semaphore);
 }
+
 
 /* Returns true if the current thread holds LOCK, false
    otherwise.  (Note that testing whether some other thread holds

@@ -151,7 +151,6 @@ void thread_sleep(int64_t);
 
 int thread_get_priority (void);
 void thread_set_priority (int);
-void set_donated_priority (struct thread *, int);
 
 
 int thread_get_nice (void);

@@ -439,17 +439,6 @@ thread_set_priority (int new_priority) {
 	}
 }
 
-/* Sets the current thread's priority to donated NEW_PRIORITY. */
-void
-set_donated_priority (struct thread* target_thread, int new_priority) {
-	target_thread->priority = new_priority;
-	list_sort(&ready_list, less_priority, 0);
-	if(!list_empty(&ready_list)){
-		struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);
-		dis_intr_treason(t);
-	}
-}
-
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void) {

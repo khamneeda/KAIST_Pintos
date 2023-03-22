@@ -57,6 +57,7 @@ static unsigned thread_ticks;   /* # of timer ticks since last yield. */
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
+int load_avg;
 
 static void kernel_thread (thread_func *, void *aux);
 
@@ -538,6 +539,8 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->local_ticks = 0;
 	t->priority_origin = priority;
 	list_init(&t->donated_thread_list);
+	t->nice = 0;
+	t->recent_cpu = 0;
     t->pressing_lock = NULL;
 	t->magic = THREAD_MAGIC;
 }

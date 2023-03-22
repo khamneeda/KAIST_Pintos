@@ -97,7 +97,11 @@ struct thread {
 	struct lock* pressing_lock;			/* Lock on thread */
 
 	struct list donated_thread_list;	/* List of donated priority */
-	struct list_elem donated_elem;     /* List element for donated_thread_list*/
+	struct list_elem donated_elem;      /* List element for donated_thread_list*/
+
+	int nice;                           /* Nice */
+	int recent_cpu;                     /* Recent_cpu */
+
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */

@@ -753,7 +753,11 @@ allocate_tid (void) {
 
 
 
-
+/*
+We don't need to consider about overflow because we are using 64bit.
+However, if error occurs, assertion about overflow detection using
+min, max needed in arithmetic operatons.
+*/
 
 int64_t conv_to_fixed (int n){
 	return ((int64_t) n) * f_constant;

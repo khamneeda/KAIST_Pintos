@@ -257,7 +257,7 @@ lock_release (struct lock *lock) {
 
 	if(!list_empty(&curr->donated_thread_list)){
 		struct list_elem* a_list_elem = list_front(&curr->donated_thread_list);
-		while (a_list_elem!=list_tail(&curr->donated_thread_list)&&a_list_elem->next!=NULL)
+		while (a_list_elem!=list_tail(&curr->donated_thread_list))
 		{
 			
 			struct thread* a_thread= list_entry(a_list_elem, struct thread, donated_elem);

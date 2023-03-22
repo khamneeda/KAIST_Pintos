@@ -210,7 +210,7 @@ donate_priority (struct thread* holder, int new_priority){
 		holder->priority=new_priority;
 		int level= 0;
 		struct thread * now_holder = holder;
-		while ( level<8 && now_holder->pressing_lock!=NULL ){
+		while ( level<7 && now_holder->pressing_lock!=NULL ){
 			now_holder= now_holder->pressing_lock->holder;
 			now_holder->priority = new_priority;
 			level++;
@@ -251,10 +251,7 @@ lock_release (struct lock *lock) {
 	struct thread* curr=thread_current();
 	lock->holder = NULL;
 
-	if(list_empty(&curr->donated_thread_list)){
-	    curr->priority=curr->priority_origin;
-	}
-	else{
+	if(!list_empty(&curr->donated_thread_list)){
 		struct list_elem* a_list_elem = list_front(&curr->donated_thread_list);
 		while (a_list_elem!=list_tail(&curr->donated_thread_list)&&a_list_elem->next!=NULL)
 		{

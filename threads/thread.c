@@ -342,7 +342,7 @@ thread_tid (void) {
 	return thread_current ()->tid;
 }
  
-/* Deschedules the current thread and destroys it.  Never
+/* Deschedules the current thread and destroys it.  Never 
    returns to the caller. */
 void
 thread_exit (void) {
@@ -350,7 +350,7 @@ thread_exit (void) {
 
 #ifdef USERPROG
 	process_exit ();
-#endif
+#endif 
 
 	/* Just set our status to dying and schedule another process.
 	   We will be destroyed during the call to schedule_tail(). */

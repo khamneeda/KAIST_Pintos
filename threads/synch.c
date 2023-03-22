@@ -208,7 +208,7 @@ void
 donate_priority (struct thread* holder, int new_priority){
 	if ((new_priority >= holder->priority) && (new_priority > holder->priority_origin)){ 
 		holder->priority=new_priority;
-		int level= 0;
+		int level= 0; 
 		struct thread * now_holder = holder;
 		while ( level<7 && now_holder->pressing_lock!=NULL ){
 			now_holder= now_holder->pressing_lock->holder;

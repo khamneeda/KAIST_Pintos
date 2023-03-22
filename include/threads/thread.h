@@ -165,3 +165,18 @@ int thread_get_load_avg (void);
 void do_iret (struct intr_frame *tf);
 
 #endif /* threads/thread.h */
+
+
+#define f_constant (1<<14)
+#define int_max ((1<<31) - 1)
+#define int_min (-(1<<31))
+#define int64_max (((int64_t 1)<<63) - 1)
+#define int64_min (-((int64_t 1)<<63))
+
+int64_t conv_to_fixed (int);
+int conv_to_int_round_near (int64_t);
+int conv_to_int_round_zero (int64_t);
+int64_t add_num (int64_t, int64_t);
+int64_t sub_num (int64_t, int64_t);
+int64_t mul_num (int64_t, int64_t);
+int64_t div_num (int64_t, int64_t);

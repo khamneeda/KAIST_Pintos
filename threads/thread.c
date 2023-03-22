@@ -722,3 +722,34 @@ allocate_tid (void) {
 
 	return tid;
 }
+
+
+
+
+
+
+
+int64_t conv_to_fixed (int n){
+	return ((int64_t) n) * f_constant;
+}
+int conv_to_int_round_near (int64_t x){
+	if (x < 0)
+		return (x + (f_constant/2)) / f_constant;
+	else
+		return (x - (f_constant/2)) / f_constant;
+}
+int conv_to_int_round_zero (int64_t x){
+	return x / f_constant;
+}
+int64_t add_num (int64_t x, int64_t y){
+	return x + y;
+}
+int64_t sub_num (int64_t x, int64_t y){
+	return x - y;
+}
+int64_t mul_num (int64_t x, int64_t y){
+	return x * y / f_constant;
+}
+int64_t div_num (int64_t x, int64_t y){
+	return x * f_constant / y;
+}

@@ -148,7 +148,7 @@ thread_start (void) {
 	struct semaphore idle_started;
 	sema_init (&idle_started, 0);
 	thread_create ("idle", PRI_MIN, idle, &idle_started);
-
+	load_avg=0;
 	/* Start preemptive thread scheduling. */
 	intr_enable ();
 
@@ -430,8 +430,13 @@ thread_sleep (int64_t local_ticks) {
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
-	if(thread_current ()->priority == thread_current ()->priority_origin ){
-	thread_current ()->priority = new_priority;
+	if(!thread_mlfqs){
+		if(thread_current ()->priority == thread_current ()->priority_origin ){
+		thread_current ()->priority = new_priority;
+		}
+	}
+	else{
+		thread_current ()->priority = new_priority;
 	}
 	thread_current ()->priority_origin = new_priority;
 	if(!list_empty(&ready_list)){
@@ -451,27 +456,48 @@ thread_get_priority (void) {
 void
 thread_set_nice (int nice UNUSED) {
 	/* TODO: Your implementation goes here */
+	enum intr_level old_level;
+	old_level = intr_disable ();
+
+	//현재 스레드 우선순위 재계산 -> 스케쥴링
+	//thread_current()->nice=nice; 
+	intr_set_level (old_level);
 }
 
 /* Returns the current thread's nice value. */
 int
 thread_get_nice (void) {
 	/* TODO: Your implementation goes here */
-	return 0;
+	int nice;
+	enum intr_level old_level;
+	old_level = intr_disable ();
+	nice= thread_current()->nice;
+	intr_set_level (old_level);
+	return nice;
 }
 
 /* Returns 100 times the system load average. */
 int
 thread_get_load_avg (void) {
 	/* TODO: Your implementation goes here */
-	return 0;
+	int local_load_avg;
+	enum intr_level old_level;
+	old_level = intr_disable ();
+	local_load_avg= load_avg; ///!!!!multiple 100!!!
+	intr_set_level (old_level);
+	return local_load_avg;
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) {
+	int recent_cpu;
+	enum intr_level old_level;
+	old_level = intr_disable ();
+	recent_cpu= thread_current()->recent_cpu; /// multiple 100!!
+	intr_set_level (old_level);
+	return recent_cpu;
 	/* TODO: Your implementation goes here */
-	return 0;
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.

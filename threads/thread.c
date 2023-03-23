@@ -757,6 +757,9 @@ allocate_tid (void) {
 We don't need to consider about overflow because we are using 64bit.
 However, if error occurs, assertion about overflow detection using
 min, max needed in arithmetic operatons.
+
+Following functions are used in calculating load_avg, recent_cpu, priority.
+Convert integers used in calculating rational number into fixed point first.
 */
 
 int64_t conv_to_fixed (int n){
@@ -785,4 +788,27 @@ int64_t div_num (int64_t x, int64_t y){
 }
 int64_t mul_mixed (int64_t x, int n){
 	return x * n
+}
+
+
+/*
+Following functions are used in timer_interrupt
+
+Beware overflow! 
+Get coefficient of recent_cpu first using load_avg when updating recent_cpu
+*/
+void mlfqs_updated_load_avg (void aux UNUSED){
+
+}
+void mlfqs_update_priority (struct thread *t){
+
+}
+void mlfqs_updated_recent_cpu (struct thread *t){
+
+}
+void mlfqs_increse_recent_cpu_running (void aux UNUSED){
+
+}
+void mlfqs_update_all_thread (void aux UNUSED){
+
 }

@@ -181,3 +181,12 @@ int64_t sub_num (int64_t, int64_t);
 int64_t mul_num (int64_t, int64_t);
 int64_t div_num (int64_t, int64_t);
 int64_t mul_mixed (int64_t, int)
+
+
+
+
+void mlfqs_updated_load_avg (void);
+void mlfqs_update_priority (struct thread *);
+void mlfqs_updated_recent_cpu (struct thread *);
+void mlfqs_increse_recent_cpu_running (void);
+void mlfqs_update_all_thread (void);

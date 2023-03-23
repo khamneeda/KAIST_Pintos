@@ -191,3 +191,4 @@ void mlfqs_update_recent_cpu (struct thread *);
 void mlfqs_update_priority (struct thread *);
 // void mlfqs_increse_recent_cpu_running (void);
 void mlfqs_update_all_thread (void);
+void mlfqs_update_all_thread (struct list*);

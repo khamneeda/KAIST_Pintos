@@ -809,6 +809,7 @@ void mlfqs_update_load_avg (void){
 	num_ready += list_size(&ready_list);
 	num_ready = div_num(c2f(1),  c2f(60)) * num_ready;
 	load_avg = mul_num(div_num(c2f(59), c2f(60)), load_avg) + num_ready;
+	if (load_avg < 0) load_avg = 0;
 }
 void mlfqs_update_recent_cpu (struct thread *t){
 	if (t != idle_thread){

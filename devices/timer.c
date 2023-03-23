@@ -127,6 +127,9 @@ timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
 	thread_tick (); //??
 	int64_t global_ticks = timer_ticks ();
+	if(thread_mlfqs){
+		
+	}
 	thread_wakeup(global_ticks);
 	//??handler first?
 }

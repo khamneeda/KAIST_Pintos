@@ -466,7 +466,7 @@ thread_set_nice (int nice ){ //UNUSED) {
 		struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);
 		dis_intr_treason(t);
 	}
-	
+
 	intr_set_level (old_level);
 }
 
@@ -823,5 +823,16 @@ void mlfqs_increse_recent_cpu_running (void aux UNUSED){
 	if (thread_current() != idle
 }
 void mlfqs_update_all_thread (void aux UNUSED){
+	mlfqs_update_all_threads_on_list(&ready_list);
+	mlfqs_update_all_threads_on_list(&sleep_list);
+}
 
+void mlfqs_update_all_threads_on_list (struct list* list_addr){
+	if(!list_empty(list_addr)){
+		struct thread* a_thread= list_entry(list_front(list_addr), struct thread, elem);
+		while(a_thread!=list_end(list_addr))
+			mlfqs_update_priority(a_thread); //update priority 
+			mlfqs_update_recent_cpu(a_thread);//update recent_cpu_running
+			a_thread=a_thread->elem.next;
+	}
 }

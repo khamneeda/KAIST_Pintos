@@ -460,8 +460,9 @@ thread_set_nice (int nice ){ //UNUSED) {
 	old_level = intr_disable ();
 
 	thread_current()->nice=nice;
-	thread_current()->priority = PRI_DEFAULT; //재계산 필요
+	mlfqs_update_priority(thread_current()); //재계산 필요
 
+	list_sort(&ready_list,less_priority,0);
 	if(!list_empty(&ready_list)){
 		struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);
 		dis_intr_treason(t);

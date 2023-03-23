@@ -836,7 +836,7 @@ void mlfqs_update_all_threads_on_list (struct list* list_addr){
 		while(a_thread!=list_end(list_addr)){
 			mlfqs_update_recent_cpu(a_thread);//update recent_cpu_running
 			mlfqs_update_priority(a_thread); //update priority 
-			a_thread=a_thread->elem.next;
+			a_thread=list_entry(list_next(&a_thread->elem), struct thread, elem);
 		}
 	}
 }

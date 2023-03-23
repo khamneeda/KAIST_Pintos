@@ -762,34 +762,34 @@ Following functions are used in calculating load_avg, recent_cpu, priority.
 Convert integers used in calculating rational number into fixed point first.
 */
 
-int64_t conv_to_fixed (int n){
-	return ((int64_t) n) * f_constant;
+// int64_t add_num (int64_t x, int64_t y){
+// 	return x + y;
+// }
+// int64_t sub_num (int64_t x, int64_t y){
+// 	return x - y;
+// }
+// int64_t mul_mixed (int64_t x, int n){
+// 	return x * n
+// }
+int c2f (int n){
+	return n * f_constant;
 }
-int conv_to_int_round_near (int64_t x){
+int conv_to_int_round_near (int x){
 	if (x < 0)
 		return (x + (f_constant/2)) / f_constant;
 	else
 		return (x - (f_constant/2)) / f_constant;
 }
-int conv_to_int_round_zero (int64_t x){
+int conv_to_int_round_zero (int x){
 	return x / f_constant;
 }
-int64_t add_num (int64_t x, int64_t y){
-	return x + y;
-}
-int64_t sub_num (int64_t x, int64_t y){
-	return x - y;
-}
-int64_t mul_num (int64_t x, int64_t y){
-	return x * y / f_constant;
-}
-int64_t div_num (int64_t x, int64_t y){
-	return x * f_constant / y;
-}
-int64_t mul_mixed (int64_t x, int n){
-	return x * n
-}
 
+int mul_num (int x, int y){
+	return (int)((int64_t) x * y / f_constant);
+}
+int div_num (int x, int y){
+	return (int)((int64_t) x * f_constant / y);
+}
 
 /*
 Following functions are used in timer_interrupt
@@ -797,17 +797,24 @@ Following functions are used in timer_interrupt
 Beware overflow! 
 Get coefficient of recent_cpu first using load_avg when updating recent_cpu
 */
-void mlfqs_updated_load_avg (void aux UNUSED){
-
+void mlfqs_update_load_avg (void aux UNUSED){
+	int num_ready = 0;
+	if (thread_current() == idle_thread) num_ready++;
+	num_ready += list_size(&ready_list);
+	num_ready = div_num(c2f(1),  c2f(60)) * num_ready;
+	load_avg = mul_num(div_num(c2f(59), c2f(60)), load_avg) + num_ready;
+}
+void mlfqs_update_recent_cpu (struct thread *t){
+	
 }
 void mlfqs_update_priority (struct thread *t){
 
-}
-void mlfqs_updated_recent_cpu (struct thread *t){
+
 
 }
+/*해당 함수는 그냥 timer_interrupt에서 만들어도 될듯*/
 void mlfqs_increse_recent_cpu_running (void aux UNUSED){
-
+	if (thread_current() != idle
 }
 void mlfqs_update_all_thread (void aux UNUSED){
 

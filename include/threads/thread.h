@@ -173,20 +173,21 @@ void do_iret (struct intr_frame *tf);
 // #define int64_max (((int64_t 1)<<63) - 1)
 // #define int64_min (-((int64_t 1)<<63))
 
-int64_t conv_to_fixed (int);
-int conv_to_int_round_near (int64_t);
-int conv_to_int_round_zero (int64_t);
-int64_t add_num (int64_t, int64_t);
-int64_t sub_num (int64_t, int64_t);
-int64_t mul_num (int64_t, int64_t);
-int64_t div_num (int64_t, int64_t);
-int64_t mul_mixed (int64_t, int)
+int c2f (int);			/* Convert to fixed point number*/
+int conv_to_int_round_near (int);		/* Convert to int from f.p.n */
+int conv_to_int_round_zero (int);
+// int64_t add_num (int64_t, int64_t);
+// int64_t sub_num (int64_t, int64_t);
+/* Arithmetic operations used in floating point number calculation */
+int mul_num (int, int);
+int div_num (int, int);
+// int64_t mul_mixed (int64_t, int)
 
 
 
 
-void mlfqs_updated_load_avg (void);
+void mlfqs_update_load_avg (void);
+void mlfqs_update_recent_cpu (struct thread *);
 void mlfqs_update_priority (struct thread *);
-void mlfqs_updated_recent_cpu (struct thread *);
 void mlfqs_increse_recent_cpu_running (void);
 void mlfqs_update_all_thread (void);

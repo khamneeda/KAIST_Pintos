@@ -125,10 +125,15 @@ timer_print_stats (void) {
 static void
 timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
-	thread_tick (); //??
+	thread_tick (); 
 	int64_t global_ticks = timer_ticks ();
 	if(thread_mlfqs){
-		
+		thread_current()->recent_cpu++;
+		if (timer_ticks () % TIMER_FREQ == 0){
+			mlfqs_update_all_thread();
+			mlfqs_update_load_avg();
+		}
+		if (timer_ticks () % 4 == 0) mlfqs_update_priority(thread_current()); 
 	}
 	thread_wakeup(global_ticks);
 	//??handler first?

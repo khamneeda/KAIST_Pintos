@@ -803,7 +803,7 @@ Following functions are used in timer_interrupt
 Beware overflow! 
 Get coefficient of recent_cpu first using load_avg when updating recent_cpu
 */
-void mlfqs_update_load_avg (void aux UNUSED){
+void mlfqs_update_load_avg (void){
 	int num_ready = 0;
 	if (thread_current() != idle_thread) num_ready++;
 	num_ready += list_size(&ready_list);
@@ -813,7 +813,7 @@ void mlfqs_update_load_avg (void aux UNUSED){
 void mlfqs_update_recent_cpu (struct thread *t){
 	if (t != idle_thread){
 		int coeffi = (2*load_avg) / (2*load_avg + c2f(1));
-		t->recent_cpu = mul(coeffi, t->recent_cpu) + c2f(t->nice);
+		t->recent_cpu = mul_num(coeffi, t->recent_cpu) + c2f(t->nice);
 	}
 }
 void mlfqs_update_priority (struct thread *t){
@@ -824,7 +824,7 @@ void mlfqs_update_priority (struct thread *t){
 /*해당 함수는 그냥 timer_interrupt에서 만들어도 될듯*/
 // void mlfqs_increse_recent_cpu_running (void aux UNUSED){
 
-void mlfqs_update_all_thread (void aux UNUSED){
+void mlfqs_update_all_thread (void){
 	mlfqs_update_all_threads_on_list(&ready_list);
 	mlfqs_update_all_threads_on_list(&sleep_list);
 }

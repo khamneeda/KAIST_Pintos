@@ -192,3 +192,4 @@ void mlfqs_update_priority (struct thread *);
 // void mlfqs_increse_recent_cpu_running (void);
 void mlfqs_update_all_thread (void);
 void mlfqs_update_all_threads_on_list (struct list*);
+bool is_idle(void);

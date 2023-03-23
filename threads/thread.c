@@ -434,14 +434,11 @@ thread_set_priority (int new_priority) {
 		if(thread_current ()->priority == thread_current ()->priority_origin ){
 		thread_current ()->priority = new_priority;
 		}
-	}
-	else{
-		thread_current ()->priority = new_priority;
-	}
-	thread_current ()->priority_origin = new_priority;
-	if(!list_empty(&ready_list)){
-		struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);
-		dis_intr_treason(t);
+		thread_current ()->priority_origin = new_priority;
+		if(!list_empty(&ready_list)){
+			struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);
+			dis_intr_treason(t);
+		}
 	}
 }
 
@@ -454,7 +451,7 @@ thread_get_priority (void) {
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int nice ){ //UNUSED) {
+thread_set_nice (int nice){ 
 	/* TODO: Your implementation goes here */
 	enum intr_level old_level;
 	old_level = intr_disable ();
@@ -475,9 +472,9 @@ thread_set_nice (int nice ){ //UNUSED) {
 int
 thread_get_nice (void) {
 	/* TODO: Your implementation goes here */
-	int nice;
 	enum intr_level old_level;
 	old_level = intr_disable ();
+	int nice;
 	nice= thread_current()->nice;
 	intr_set_level (old_level);
 	return nice;
@@ -487,10 +484,10 @@ thread_get_nice (void) {
 int
 thread_get_load_avg (void) {
 	/* TODO: Your implementation goes here */
-	int local_load_avg;
 	enum intr_level old_level;
 	old_level = intr_disable ();
-	local_load_avg= conv_to_int_round_zero(load_avg*100); ///!!!!multiple 100!!!
+	int local_load_avg;
+	local_load_avg= conv_to_int_round_near(load_avg*100); ///!!!!multiple 100!!!
 	intr_set_level (old_level);
 	return local_load_avg;
 }
@@ -498,10 +495,10 @@ thread_get_load_avg (void) {
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) {
-	int recent_cpu;
 	enum intr_level old_level;
 	old_level = intr_disable ();
-	recent_cpu= conv_to_int_round_zero(thread_current()->recent_cpu*100); ///!!!!multiple 100!!!
+	int recent_cpu;
+	recent_cpu= conv_to_int_round_near(thread_current()->recent_cpu*100); ///!!!!multiple 100!!!
 	intr_set_level (old_level);
 	return recent_cpu;
 	/* TODO: Your implementation goes here */
@@ -840,4 +837,7 @@ void mlfqs_update_all_threads_on_list (struct list* list_addr){
 			a_thread=list_entry(list_next(&a_thread->elem), struct thread, elem);
 		}
 	}
+}
+bool is_idle(void){
+	return thread_current() == idle_thread;
 }

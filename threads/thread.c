@@ -454,13 +454,19 @@ thread_get_priority (void) {
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int nice UNUSED) {
+thread_set_nice (int nice ){ //UNUSED) {
 	/* TODO: Your implementation goes here */
 	enum intr_level old_level;
 	old_level = intr_disable ();
 
-	//현재 스레드 우선순위 재계산 -> 스케쥴링
-	//thread_current()->nice=nice; 
+	thread_current()->nice=nice;
+	thread_current()->priority = PRI_DEFAULT; //재계산 필요
+
+	if(!list_empty(&ready_list)){
+		struct thread* t = list_entry(list_pop_front(&ready_list), struct thread, elem);
+		dis_intr_treason(t);
+	}
+	
 	intr_set_level (old_level);
 }
 
@@ -483,7 +489,7 @@ thread_get_load_avg (void) {
 	int local_load_avg;
 	enum intr_level old_level;
 	old_level = intr_disable ();
-	local_load_avg= load_avg; ///!!!!multiple 100!!!
+	local_load_avg= conv_to_int_round_zero(load_avg*100); ///!!!!multiple 100!!!
 	intr_set_level (old_level);
 	return local_load_avg;
 }
@@ -494,7 +500,7 @@ thread_get_recent_cpu (void) {
 	int recent_cpu;
 	enum intr_level old_level;
 	old_level = intr_disable ();
-	recent_cpu= thread_current()->recent_cpu; /// multiple 100!!
+	recent_cpu= conv_to_int_round_zero(thread_current()->recent_cpu*100); ///!!!!multiple 100!!!
 	intr_set_level (old_level);
 	return recent_cpu;
 	/* TODO: Your implementation goes here */

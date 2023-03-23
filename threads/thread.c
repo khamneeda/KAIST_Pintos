@@ -805,22 +805,25 @@ Get coefficient of recent_cpu first using load_avg when updating recent_cpu
 */
 void mlfqs_update_load_avg (void aux UNUSED){
 	int num_ready = 0;
-	if (thread_current() == idle_thread) num_ready++;
+	if (thread_current() != idle_thread) num_ready++;
 	num_ready += list_size(&ready_list);
 	num_ready = div_num(c2f(1),  c2f(60)) * num_ready;
 	load_avg = mul_num(div_num(c2f(59), c2f(60)), load_avg) + num_ready;
 }
 void mlfqs_update_recent_cpu (struct thread *t){
-	
+	if (t != idle_thread){
+		int coeffi = (2*load_avg) / (2*load_avg + c2f(1));
+		t->recent_cpu = mul(coeffi, t->recent_cpu) + c2f(t->nice);
+	}
 }
 void mlfqs_update_priority (struct thread *t){
-
-
-
+	if (t != idle_thread){
+		t->priority = PRI_MAX - conv_to_int_round_zero(div_num(t->recent_cpu, c2f(4))) - 2*t->nice; 
+	}
 }
 /*해당 함수는 그냥 timer_interrupt에서 만들어도 될듯*/
-void mlfqs_increse_recent_cpu_running (void aux UNUSED){
-	if (thread_current() != idle
+// void mlfqs_increse_recent_cpu_running (void aux UNUSED){
+
 }
 void mlfqs_update_all_thread (void aux UNUSED){
 

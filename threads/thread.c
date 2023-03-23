@@ -824,7 +824,6 @@ void mlfqs_update_priority (struct thread *t){
 /*해당 함수는 그냥 timer_interrupt에서 만들어도 될듯*/
 // void mlfqs_increse_recent_cpu_running (void aux UNUSED){
 
-}
 void mlfqs_update_all_thread (void aux UNUSED){
 	mlfqs_update_all_threads_on_list(&ready_list);
 	mlfqs_update_all_threads_on_list(&sleep_list);

@@ -783,3 +783,6 @@ int64_t mul_num (int64_t x, int64_t y){
 int64_t div_num (int64_t x, int64_t y){
 	return x * f_constant / y;
 }
+int64_t mul_mixed (int64_t x, int n){
+	return x * n
+}

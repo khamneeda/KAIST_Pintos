@@ -180,3 +180,4 @@ int64_t add_num (int64_t, int64_t);
 int64_t sub_num (int64_t, int64_t);
 int64_t mul_num (int64_t, int64_t);
 int64_t div_num (int64_t, int64_t);
+int64_t mul_mixed (int64_t, int)

@@ -221,7 +221,7 @@ thread_create (const char *name, int priority,
 	init_thread (t, name, priority);
 	//t->priority_origin=priority; init_thread에 넣음
 	tid = t->tid = allocate_tid ();
-	list_push_back(&total_list,&t->total_list_elem);
+	if (name != "idle")	list_push_back(&total_list,&t->total_list_elem);
 
 	/* Call the kernel_thread if it scheduled.
 	 * Note) rdi is 1st argument, and rsi is 2nd argument. */
@@ -361,7 +361,7 @@ thread_exit (void) {
 	/* Just set our status to dying and schedule another process.
 	   We will be destroyed during the call to schedule_tail(). */
 	intr_disable ();
-	list_remove(&thread_current()->total_list_elem);
+	list_remove(&thread_current()->total_list_elem);//idle??
 	do_schedule (THREAD_DYING);
 	NOT_REACHED ();
 }

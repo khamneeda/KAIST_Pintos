@@ -387,6 +387,7 @@ thread_yield (void) {
 void
 thread_wakeup (int64_t global_ticks) {
 	struct thread *curr = thread_current ();
+	list_sort(&sleep_list,less_priority,0);
 	if (!list_empty (&sleep_list))
 	{
 		struct thread* t= list_entry(list_front (&sleep_list), struct thread, elem);
@@ -824,7 +825,7 @@ void mlfqs_update_recent_cpu (struct thread *t){
 }
 void mlfqs_update_priority (struct thread *t){
 	if (t != idle_thread){
-		t->priority = PRI_MAX - conv_to_int_round_zero(div_num(t->recent_cpu, c2f(4))) - 2*t->nice; 
+		t->priority = conv_to_int_round_zero(c2f(PRI_MAX) - div_num(t->recent_cpu, c2f(4))- 2*c2f(t->nice)) ; 
 		if(t->priority>PRI_MAX){
 			t->priority=PRI_MAX;
 		}
@@ -844,11 +845,11 @@ void mlfqs_update_all_thread (void){
 
 void mlfqs_update_all_threads_on_list (struct list* list_addr){
 	if(!list_empty(list_addr)){
-		struct thread* a_thread= list_entry(list_front(list_addr), struct thread, elem);
-		while(&a_thread->elem!=list_end(list_addr)){
+		struct thread* a_thread= list_entry(list_front(list_addr), struct thread, total_list_elem);
+		while(&a_thread->total_list_elem!=list_end(list_addr)){
 			mlfqs_update_recent_cpu(a_thread);//update recent_cpu_running
 			mlfqs_update_priority(a_thread); //update priority 
-			a_thread=list_entry(list_next(&a_thread->elem), struct thread, elem);
+			a_thread=list_entry(list_next(&a_thread->total_list_elem), struct thread, total_list_elem);
 		}
 	}
 }

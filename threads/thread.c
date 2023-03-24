@@ -573,9 +573,11 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->status = THREAD_BLOCKED;
 	strlcpy (t->name, name, sizeof t->name);
 	t->tf.rsp = (uint64_t) t + PGSIZE - sizeof (void *);
+	if (!thread_mlfqs){
 	t->priority = priority;
-	t->local_ticks = 0;
 	t->priority_origin = priority;
+	}
+	t->local_ticks = 0;
 	list_init(&t->donated_thread_list);
 	t->nice = 0;
 	t->recent_cpu = 0;

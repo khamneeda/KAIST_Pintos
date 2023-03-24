@@ -818,7 +818,7 @@ void mlfqs_update_load_avg (void){
 }
 void mlfqs_update_recent_cpu (struct thread *t){
 	if (t != idle_thread){
-		int coeffi = div_num((2*load_avg) / (2*load_avg + c2f(1)));
+		int coeffi = div_num((2*load_avg), (2*load_avg + c2f(1)));
 		t->recent_cpu = mul_num(coeffi, t->recent_cpu) + c2f(t->nice);
 	}
 }

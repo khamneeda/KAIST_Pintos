@@ -387,7 +387,7 @@ thread_yield (void) {
 void
 thread_wakeup (int64_t global_ticks) {
 	struct thread *curr = thread_current ();
-	list_sort(&sleep_list,less_priority,0);
+	list_sort(&sleep_list,less_ticks,0);
 	if (!list_empty (&sleep_list))
 	{
 		struct thread* t= list_entry(list_front (&sleep_list), struct thread, elem);
@@ -396,7 +396,7 @@ thread_wakeup (int64_t global_ticks) {
           t->status=THREAD_READY;
 		  list_pop_front(&sleep_list);
 		  //thread_treason (t);
-			 if(curr->priority>=t->priority){
+			if(curr->priority>=t->priority){
 				list_insert_ordered(&ready_list,&t->elem,less_priority,0);
 				t->status = THREAD_READY;
 			}
@@ -787,7 +787,7 @@ int c2f (int n){
 	return n * f_constant;
 }
 int conv_to_int_round_near (int x){
-	if (x > 0)
+	if (x >= 0)
 		return (x + (f_constant/2)) / f_constant;
 	else
 		return (x - (f_constant/2)) / f_constant;
@@ -797,10 +797,10 @@ int conv_to_int_round_zero (int x){
 }
 
 int mul_num (int x, int y){
-	return (int)((int64_t) x * y / f_constant);
+	return (int)( ( (int64_t) x )* y / f_constant);
 }
 int div_num (int x, int y){
-	return (int)((int64_t) x * f_constant / y);
+	return (int)( ( (int64_t) x ) * f_constant / y);
 }
 
 /*
@@ -825,7 +825,7 @@ void mlfqs_update_recent_cpu (struct thread *t){
 }
 void mlfqs_update_priority (struct thread *t){
 	if (t != idle_thread){
-		t->priority = conv_to_int_round_zero(c2f(PRI_MAX) - div_num(t->recent_cpu, c2f(4))- 2*c2f(t->nice)) ; 
+		t->priority = conv_to_int_round_zero(c2f(PRI_MAX) -t->recent_cpu/4- 2*c2f(t->nice)) ; 
 		if(t->priority>PRI_MAX){
 			t->priority=PRI_MAX;
 		}

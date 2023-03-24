@@ -128,7 +128,7 @@ timer_interrupt (struct intr_frame *args UNUSED) {
 	thread_tick (); 
 	int64_t global_ticks = timer_ticks ();
 	if(thread_mlfqs){
-		if (!is_idle()) thread_current()->recent_cpu++;
+		if (!is_idle()) thread_current()->recent_cpu= thread_current()->recent_cpu +c2f(1) ;
 		if (timer_ticks () % TIMER_FREQ == 0){
 			mlfqs_update_load_avg();
 			mlfqs_update_all_thread();

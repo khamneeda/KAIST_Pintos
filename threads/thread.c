@@ -32,6 +32,10 @@ static struct list ready_list;
    that are not actually running during the "duration". */
 static struct list sleep_list;
 
+/* List of processes in THREAD_BLOCKED state, that is, processes
+   that are not actually running during the "duration". */
+static struct list total_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -131,6 +135,7 @@ thread_init (void) {
 	lock_init (&tid_lock);
 	list_init (&ready_list);
 	list_init (&sleep_list);
+	list_init (&total_list);
 	list_init (&destruction_req);
 
 	/* Set up a thread structure for the running thread. */
@@ -216,6 +221,7 @@ thread_create (const char *name, int priority,
 	init_thread (t, name, priority);
 	//t->priority_origin=priority; init_thread에 넣음
 	tid = t->tid = allocate_tid ();
+	list_push_back(&total_list,&t->total_list_elem);
 
 	/* Call the kernel_thread if it scheduled.
 	 * Note) rdi is 1st argument, and rsi is 2nd argument. */
@@ -355,6 +361,7 @@ thread_exit (void) {
 	/* Just set our status to dying and schedule another process.
 	   We will be destroyed during the call to schedule_tail(). */
 	intr_disable ();
+	list_remove(&thread_current()->total_list_elem);
 	do_schedule (THREAD_DYING);
 	NOT_REACHED ();
 }
@@ -779,7 +786,7 @@ int c2f (int n){
 	return n * f_constant;
 }
 int conv_to_int_round_near (int x){
-	if (x < 0)
+	if (x > 0)
 		return (x + (f_constant/2)) / f_constant;
 	else
 		return (x - (f_constant/2)) / f_constant;
@@ -804,7 +811,7 @@ Get coefficient of recent_cpu first using load_avg when updating recent_cpu
 void mlfqs_update_load_avg (void){
 	int num_ready = 0;
 	if (thread_current() != idle_thread) num_ready++;
-	num_ready += list_size(&ready_list);
+	num_ready += (int)list_size(&ready_list);
 	num_ready = div_num(c2f(1),  c2f(60)) * num_ready;
 	load_avg = mul_num(div_num(c2f(59), c2f(60)), load_avg) + num_ready;
 	if (load_avg < 0) load_avg = 0;
@@ -824,8 +831,9 @@ void mlfqs_update_priority (struct thread *t){
 // void mlfqs_increse_recent_cpu_running (void aux UNUSED){
 
 void mlfqs_update_all_thread (void){
-	mlfqs_update_all_threads_on_list(&ready_list);
-	mlfqs_update_all_threads_on_list(&sleep_list);
+	mlfqs_update_all_threads_on_list(&total_list);
+	//mlfqs_update_all_threads_on_list(&ready_list);
+	//mlfqs_update_all_threads_on_list(&sleep_list);
 }
 
 void mlfqs_update_all_threads_on_list (struct list* list_addr){

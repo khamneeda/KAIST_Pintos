@@ -101,7 +101,7 @@ struct thread {
 
 	int nice;                           /* Nice */
 	int recent_cpu;                     /* Recent_cpu */
-
+	struct list_elem total_list_elem;   /* to manage total list_elem*/
 
 	/* Shared between thread.c and synch.c. */
 	struct list_elem elem;              /* List element. */

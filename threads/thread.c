@@ -818,13 +818,19 @@ void mlfqs_update_load_avg (void){
 }
 void mlfqs_update_recent_cpu (struct thread *t){
 	if (t != idle_thread){
-		int coeffi = (2*load_avg) / (2*load_avg + c2f(1));
+		int coeffi = div_num((2*load_avg) / (2*load_avg + c2f(1)));
 		t->recent_cpu = mul_num(coeffi, t->recent_cpu) + c2f(t->nice);
 	}
 }
 void mlfqs_update_priority (struct thread *t){
 	if (t != idle_thread){
 		t->priority = PRI_MAX - conv_to_int_round_zero(div_num(t->recent_cpu, c2f(4))) - 2*t->nice; 
+		if(t->priority>PRI_MAX){
+			t->priority=PRI_MAX;
+		}
+		if(t->priority<PRI_MIN){
+			t->priority=PRI_MIN;
+		}
 	}
 }
 /*해당 함수는 그냥 timer_interrupt에서 만들어도 될듯*/

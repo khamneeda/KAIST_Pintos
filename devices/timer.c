@@ -127,16 +127,18 @@ timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
 	thread_tick (); 
 	int64_t global_ticks = timer_ticks ();
+	struct thread * curr = thread_current();
 	if(thread_mlfqs){
-		if (!is_idle()) thread_current()->recent_cpu= thread_current()->recent_cpu +c2f(1) ;
-		if (timer_ticks () % TIMER_FREQ == 0){
-			mlfqs_update_load_avg();
-			mlfqs_update_all_thread();
+		if (!is_idle()) curr->recent_cpu+= c2f(1) ;
+		if (timer_ticks () % 4 == 0) {
+			if (timer_ticks () % TIMER_FREQ == 0){
+				mlfqs_update_load_avg();
+				mlfqs_update_all_thread();
+			}
+			mlfqs_update_priority(curr); 
 		}
-		if (timer_ticks () % 4 == 0) mlfqs_update_priority(thread_current()); 
 	}
 	thread_wakeup(global_ticks);
-	//??handler first?
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

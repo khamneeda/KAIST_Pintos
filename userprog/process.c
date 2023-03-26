@@ -316,6 +316,36 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 		uint32_t read_bytes, uint32_t zero_bytes,
 		bool writable);
 
+
+
+/*
+Get the number of splited words in command line.
+*/
+int get_rank(const char *file_name) {
+   size_t s_length = strlen(file_name);
+   char s[s_length+1];
+
+   strnlpy(s, file_name, s_length);
+   strlcat(s, " ");
+
+  int number=0;
+  int status=0;
+    for (int length = 0; s[length] != '\0' && length < s_length; length++){
+    if( length ==0 && s[length] == ' '){
+      status=1;
+    }
+    else if (s[length]==' '&&status==0){
+      status=1;
+      number++;
+    }
+    else{
+      status=0;
+    }
+  }
+  return number;
+}
+
+
 /* Loads an ELF executable from FILE_NAME into the current thread.
  * Stores the executable's entry point into *RIP
  * and its initial stack pointer into *RSP.
@@ -335,10 +365,30 @@ load (const char *file_name, struct intr_frame *if_) {
 		goto done;
 	process_activate (thread_current ());
 
+	/* Split command line */
+	int arg_len = get_rank(file_name);
+	size_t command_length = strlen(file_name);
+	char command[command_length];
+	strnlpy(command, file_name, command_length);
+
+	const char* arg[20] = {NULL, };
+	char* saving_str;
+	char* tocken;
+	int j = 0;
+    for (tocken = strtok_r (command, " ", &saving_str); tocken != NULL; tocken = strtok_r (NULL, " ", &saving_str)){
+        arg[j] = tocken;
+        j++;
+    }
+
+	const char* name_of_file = arg[0];
+
+
+
+
 	/* Open executable file. */
-	file = filesys_open (file_name);
+	file = filesys_open (name_of_file);
 	if (file == NULL) {
-		printf ("load: %s: open failed\n", file_name);
+		printf ("load: %s: open failed\n", name_of_file);
 		goto done;
 	}
 
@@ -350,7 +400,7 @@ load (const char *file_name, struct intr_frame *if_) {
 			|| ehdr.e_version != 1
 			|| ehdr.e_phentsize != sizeof (struct Phdr)
 			|| ehdr.e_phnum > 1024) {
-		printf ("load: %s: error loading executable\n", file_name);
+		printf ("load: %s: error loading executable\n", name_of_file);
 		goto done;
 	}
 
@@ -416,6 +466,40 @@ load (const char *file_name, struct intr_frame *if_) {
 
 	/* TODO: Your code goes here.
 	 * TODO: Implement argument passing (see project2/argument_passing.html). */
+
+
+	int arg_addr[20] = {0, };
+
+
+	/* Argument data */
+	for (int i = arg_len - 1; i >= 0; i--) {
+		if_->rsp -= strlen(arg[arg_len]);
+		arg_addr[arg_len -1 -i] = (char *) if_->rsp;
+		memcpy(if_->rsp, arg[i], strlen(arg[i]));
+	}
+
+	/* Padding */
+	int rest=if_->rsp%8;
+    if(rest!=0){ if_->rsp-=rest;}
+    memset(  if_->rsp,0,rest);
+    if_->rsp-=8;
+    memset(if_->rsp,0,8);
+
+	/* Data address */
+    for(int i=0; i< arg_len; i++){
+        if_->rsp-=8;
+        memcpy(if_->rsp, arg_addr[i], 8);
+    }
+
+	/* Fake Address */
+	if_->rsp-=8;
+    memset(if_->rsp,0,8);
+
+//strlen(file_name);
+
+
+
+
 
 	success = true;
 

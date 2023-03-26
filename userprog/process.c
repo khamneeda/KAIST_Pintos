@@ -325,21 +325,17 @@ int get_rank(const char *file_name) {
    size_t s_length = strlen(file_name);
    char s[s_length+1];
 
-   strnlpy(s, file_name, s_length);
-   strlcat(s, " ");
+   strlcpy(s, file_name, s_length);
 
   int number=0;
   int status=0;
     for (int length = 0; s[length] != '\0' && length < s_length; length++){
-    if( length ==0 && s[length] == ' '){
-      status=1;
+    if( s[length] == ' '){
+      status=0;
     }
-    else if (s[length]==' '&&status==0){
+    else if (s[length]!=' '&&status==0){
       status=1;
       number++;
-    }
-    else{
-      status=0;
     }
   }
   return number;
@@ -368,8 +364,8 @@ load (const char *file_name, struct intr_frame *if_) {
 	/* Split command line */
 	int arg_len = get_rank(file_name);
 	size_t command_length = strlen(file_name);
-	char command[command_length];
-	strnlpy(command, file_name, command_length);
+	char command[80];
+	strlcpy(command, file_name, command_length);
 
 	const char* arg[20] = {NULL, };
 	char* saving_str;
@@ -496,11 +492,6 @@ load (const char *file_name, struct intr_frame *if_) {
     memset(if_->rsp,0,8);
 
 //strlen(file_name);
-
-
-
-
-
 	success = true;
 
 done:

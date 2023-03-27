@@ -310,12 +310,19 @@ thread_treason (struct thread *t) {
 		t->status = THREAD_READY;
 	}
 	else{ //Treason succeeded.
+		if(!intr_context()){
        	struct thread *curr = thread_current ();
 		if (curr != idle_thread){
 			list_insert_ordered(&ready_list,&curr->elem,less_priority,0);
 		}
 		list_push_front(&ready_list,&t->elem);
 		do_schedule (THREAD_READY);
+		}
+		else{
+			struct thread *curr = thread_current ();
+			list_push_front(&ready_list,&t->elem);
+			intr_yield_on_return();
+		}
 	}
 }
 

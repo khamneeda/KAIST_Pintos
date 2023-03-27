@@ -325,7 +325,7 @@ int get_rank(const char *file_name) {
    size_t s_length = strlen(file_name);
    char s[s_length+1];
 
-   strlcpy(s, file_name, s_length);
+   strlcpy(s, file_name, s_length+1);
 
   int number=0;
   int status=0;
@@ -365,7 +365,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	int arg_len = get_rank(file_name);
 	size_t command_length = strlen(file_name);
 	char command[80];
-	strlcpy(command, file_name, command_length);
+	strlcpy(command, file_name, command_length+1);
 
 	const char* arg[20] = {NULL, };
 	char* saving_str;
@@ -469,9 +469,9 @@ load (const char *file_name, struct intr_frame *if_) {
 
 	/* Argument data */
 	for (int i = arg_len - 1; i >= 0; i--) {
-		if_->rsp -= strlen(arg[arg_len]);
+		if_->rsp = if_->rsp- strlen(arg[arg_len])-1 ;
 		arg_addr[arg_len -1 -i] = (char *) if_->rsp;
-		memcpy(if_->rsp, arg[i], strlen(arg[i]));
+		memcpy(if_->rsp, arg[i], strlen(arg[i])+1 );
 	}
 
 	/* Padding */

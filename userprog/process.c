@@ -204,6 +204,7 @@ process_wait (tid_t child_tid UNUSED) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
+	while(1){}
 	return -1;
 }
 
@@ -323,9 +324,10 @@ Get the number of splited words in command line.
 */
 int get_rank(const char *file_name) {
    size_t s_length = strlen(file_name);
-   char s[s_length+1];
+   size_t temp_size=80;
+   char s[temp_size];
 
-   strlcpy(s, file_name, s_length+1);
+   if(s_length < temp_size) strlcpy(s, file_name, s_length+1);
 
   int number=0;
   int status=0;
@@ -464,12 +466,12 @@ load (const char *file_name, struct intr_frame *if_) {
 	 * TODO: Implement argument passing (see project2/argument_passing.html). */
 
 
-	int arg_addr[20] = {0, };
+	char * arg_addr[20] = {0, };
 
 
 	/* Argument data */
 	for (int i = arg_len - 1; i >= 0; i--) {
-		if_->rsp = if_->rsp- strlen(arg[arg_len])-1 ;
+		if_->rsp = if_->rsp- strlen(arg[i])-1 ;
 		arg_addr[arg_len -1 -i] = (char *) if_->rsp;
 		memcpy(if_->rsp, arg[i], strlen(arg[i])+1 );
 	}
@@ -484,7 +486,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	/* Data address */
     for(int i=0; i< arg_len; i++){
         if_->rsp-=8;
-        memcpy(if_->rsp, arg_addr[i], 8);
+        memcpy(if_->rsp, &arg_addr[i], 8);
     }
 
 	/* Fake Address */

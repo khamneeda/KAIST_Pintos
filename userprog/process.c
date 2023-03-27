@@ -327,7 +327,10 @@ int get_rank(const char *file_name) {
    size_t temp_size=80;
    char s[temp_size];
 
-   if(s_length < temp_size) strlcpy(s, file_name, s_length+1);
+   //if(s_length < temp_size) strlcpy(s, file_name, s_length+1);
+   ASSERT(s_length < temp_size);
+   strlcpy(s, file_name, s_length+1);
+
 
   int number=0;
   int status=0;

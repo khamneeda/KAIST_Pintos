@@ -41,7 +41,8 @@ syscall_init (void) {
 void
 syscall_handler (struct intr_frame *f) {
 	// TODO: Your implementation goes here.
-	if(!check_address((uint64_t)f)){
+	uint64_t rsp = f->rsp;
+	if(!check_address(rsp)){
 		printf("not\n");
 	}
 	printf ("system call!\n");

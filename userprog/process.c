@@ -493,6 +493,9 @@ load (const char *file_name, struct intr_frame *if_) {
 	if_->rsp-=8;
     memset(if_->rsp,0,8);
 
+	if_->R.rdi= arg_len;
+	if_->R.rsi= if_->rsp+8;
+
 //strlen(file_name);
 	success = true;
 

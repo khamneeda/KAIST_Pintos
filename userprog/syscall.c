@@ -39,8 +39,24 @@ syscall_init (void) {
 
 /* The main system call interface */
 void
-syscall_handler (struct intr_frame *f UNUSED) {
+syscall_handler (struct intr_frame *f) {
 	// TODO: Your implementation goes here.
+	if(!check_address((uint64_t)f)){
+		printf("not\n");
+	}
 	printf ("system call!\n");
 	thread_exit ();
+}
+
+int
+check_address(uint64_t f){
+	if(f!=NULL&&f-KERN_BASE<0){
+		struct thread* curr=thread_current();
+		const uint64_t va = f;
+		uint64_t *pte= pml4e_walk(curr->pml4,f,0);
+		if(pte!=NULL){
+			return 1;
+		}
+	}
+	return 0;  
 }

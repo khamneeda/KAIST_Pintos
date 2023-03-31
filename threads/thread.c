@@ -321,7 +321,7 @@ thread_treason (struct thread *t) {
 		else{
 			struct thread *curr = thread_current ();
 			list_push_front(&ready_list,&t->elem);
-			intr_yield_on_return(); 
+			intr_yield_on_return();
 		}
 	}
 }

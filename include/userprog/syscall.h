@@ -2,6 +2,6 @@
 #define USERPROG_SYSCALL_H
 
 void syscall_init (void);
-int check_address(uint64_t);
+int check_address(uintptr_t);
 
 #endif /* userprog/syscall.h */

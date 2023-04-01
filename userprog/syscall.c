@@ -41,8 +41,7 @@ syscall_init (void) {
 void
 syscall_handler (struct intr_frame *f) {
 	// TODO: Your implementation goes here.
-	uint64_t rsp = f->rsp;
-	if(!check_address(rsp)){
+	if(!check_address(f->rsp)){
 		printf("not\n");
 	}
 	printf ("system call!\n");
@@ -50,8 +49,9 @@ syscall_handler (struct intr_frame *f) {
 }
 
 int
-check_address(uint64_t f){
-	if(f!=NULL&&f-KERN_BASE<0){
+check_address(uintptr_t f){
+	printf("%lld",KERN_BASE);
+	if(f != NULL && f < KERN_BASE){
 		struct thread* curr=thread_current();
 		const uint64_t va = f;
 		uint64_t *pte= pml4e_walk(curr->pml4,f,0);

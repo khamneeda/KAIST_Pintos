@@ -77,6 +77,7 @@ syscall_handler (struct intr_frame *f) {
 	Get return value of function if it has, and update rax in IF.
 	Use int64_t for updating rax to match the type of ret in syscall.
 	*/
+	int64_t update;
 	switch (f->R.rax){
 		case SYS_HALT:
 			sys_halt(args);
@@ -85,37 +86,37 @@ syscall_handler (struct intr_frame *f) {
 			sys_exit(args);
 			break;		
 		case SYS_FORK:
-			int64_t update = sys_fork(args);
+			update = sys_fork(args);
 			break;		
 		case SYS_EXEC:
-			int64_t update = sys_exec(args);
+			update = sys_exec(args);
 			break;		
 		case SYS_WAIT:
-			int64_t update = sys_wait(args);
+			update = sys_wait(args);
 			break;		
 		case SYS_CREATE:
-			int64_t update = sys_create(args);
+			update = sys_create(args);
 			break;		
 		case SYS_REMOVE:
-			int64_t update = sys_remove(args);
+			update = sys_remove(args);
 			break;		
 		case SYS_OPEN:
-			int64_t update = sys_opne(args);
+			update = sys_open(args);
 			break;		
 		case SYS_FILESIZE:
-			int64_t update = sys_filesize(args);
+			update = sys_filesize(args);
 			break;		
 		case SYS_READ:
-			int64_t update = sys_read(args);
+			update = sys_read(args);
 			break;		
 		case SYS_WRITE:
-			int64_t update = sys_write(args);
+			update = sys_write(args);
 			break;		
 		case SYS_SEEK:
 			sys_seek(args);
 			break;		
 		case SYS_TELL:
-			int64_t update = sys_tell(args);
+			update = sys_tell(args);
 			break;		
 		case SYS_CLOSE:
 			sys_close(args);

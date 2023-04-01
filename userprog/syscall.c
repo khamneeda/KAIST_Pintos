@@ -44,7 +44,7 @@ syscall_handler (struct intr_frame *f) {
 	if(!check_address(f->rsp)){
 		printf("not\n");
 	}
-	
+
 	/* Get arguments */
 	uint64_t args[7];
     args[0]= f->R.rax;
@@ -54,6 +54,7 @@ syscall_handler (struct intr_frame *f) {
     args[4]= f->R.r10;
     args[5]= f->R.r8;
     args[6]= f->R.r9;
+
 
 	/* 	Switch cases 
 	Call functions for each cases due to the system call number.
@@ -142,57 +143,68 @@ check_address(uintptr_t f){
 
 
 void
-sys_halt (uint64_t args) {
+sys_halt (uint64_t* args) {
+	power_off();
 }
 
 void
-sys_exit (uint64_targs) {
+sys_exit (uint64_t* args) {
 }
 
 int64_t
-sys_fork (uint64_t args){
+sys_fork (uint64_t* args){
+	return 0;
 }
 
 int64_t
-sys_exec (uint64_targs) {
+sys_exec (uint64_t* args) {
+	return 0;
 }
 
 int64_t
-sys_wait (uint64_t args) {
+sys_wait (uint64_t* args) {
+	return 0;
 }
 
 int64_t
-sys_create (uint64_targs) {
+sys_create (uint64_t* args) {
+	return 0;
 }
 
 int64_t
-sys_remove (uint64_t args) {
+sys_remove (uint64_t* args) {
+	return 0;
 }
 
 int64_t
-sys_open (uint64_targs) {
+sys_open (uint64_t* args) {
+	return 0;
 }
 
 int64_t
-sys_filesize (uint64_t args) {
+sys_filesize (uint64_t* args) {
+	return 0;
 }
 
 int64_t
-sys_read (uint64_targs) {
+sys_read (uint64_t* args) {
+	return (int64_t) 0;
 }
 
 int64_t
-sys_write (uint64_t args) {
+sys_write (uint64_t* args) {
+	return 0;
 }
 
 void
-sys_seek (uint64_targs) {
+sys_seek (uint64_t* args) {
 }
 
 int64_t
-sys_tell (uint64_t args) {
+sys_tell (uint64_t* args) {
+	return 0;
 }
 
 void
-sys_close (uint64_targs) {
+sys_close (uint64_t* args) {
 }

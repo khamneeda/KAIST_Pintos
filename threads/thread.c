@@ -592,12 +592,9 @@ init_thread (struct thread *t, const char *name, int priority) {
 #ifdef USERPROG
 	t->is_exit=0;
 	t->exit_status=-1;
-	t->load_staus=-1;
+	t->load_status=-1;
 	list_init(&t->children_list);
 	t->parent=thread_current();
-
-	sema_init(&t->exit_sema,0);
-	sema_init(&t->load_sema,0);
 #endif
 
 }

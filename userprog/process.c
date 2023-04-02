@@ -204,8 +204,13 @@ process_wait (tid_t child_tid UNUSED) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
+
+	struct semaphore wait_exit_sema;
+	sema_init(&wait_exit_sema, 0);
+
 	struct thread* curr= thread_current();
-	sema_down(&curr->exit_sema);
+	curr->exit_sema=&wait_exit_sema;
+	sema_down(curr->exit_sema);
 
 	enum intr_level old_level;
 	old_level = intr_disable ();
@@ -216,16 +221,19 @@ process_wait (tid_t child_tid UNUSED) {
 			if ( target_child->tid == child_tid ){
 				break;
 			}
-			target_child=list_entry(list_next(&target_child->next_elem), struct thread, child_elem);
+			target_child=list_entry(list_next(&target_child->child_elem), struct thread, child_elem);
 		}
 
 		if ( &target_child->child_elem==list_end(&curr->children_list) ){
+			intr_set_level (old_level);
 			return -1;		
 		}
+		list_remove(&target_child->child_elem);
+		intr_set_level (old_level);
+		return target_child->exit_status;
 	}
 	intr_set_level (old_level);
-	list_remove(&target_child->child_elem);
-	return target_child->exit_status;
+	return -1;
 }
 
 /* Exit the process. This function is called by thread_exit (). */

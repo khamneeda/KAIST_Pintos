@@ -224,6 +224,17 @@ thread_create (const char *name, int priority,
 	tid = t->tid = allocate_tid ();
 	if (name != "idle")	list_push_back(&total_list,&t->total_list_elem);
 
+	#ifdef USERPROG
+	struct semaphore exit_sema;
+	sema_init(&exit_sema, 0);
+	t->exit_sema= &exit_sema;
+
+	struct semaphore load_sema;
+	sema_init(&load_sema, 0);
+	t->load_sema= &load_sema;
+	#endif
+
+
 	/* Call the kernel_thread if it scheduled.
 	 * Note) rdi is 1st argument, and rsi is 2nd argument. */
 	t->tf.rip = (uintptr_t) kernel_thread;

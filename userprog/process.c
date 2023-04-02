@@ -205,11 +205,7 @@ process_wait (tid_t child_tid UNUSED) {
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
 
-	struct semaphore wait_exit_sema;
-	sema_init(&wait_exit_sema, 0);
-
 	struct thread* curr= thread_current();
-	curr->exit_sema=&wait_exit_sema;
 	sema_down(curr->exit_sema);
 
 	enum intr_level old_level;

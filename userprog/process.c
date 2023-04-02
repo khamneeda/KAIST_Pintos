@@ -200,11 +200,10 @@ process_exec (void *f_name) {
  * This function will be implemented in problem 2-2.  For now, it
  * does nothing. */
 int
-process_wait (tid_t child_tid UNUSED) {
+process_wait (tid_t child_tid) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
-
 	struct thread* curr= thread_current();
 	sema_down(curr->exit_sema);
 
@@ -213,17 +212,26 @@ process_wait (tid_t child_tid UNUSED) {
 
 	if(!list_empty(&curr->children_list)){
 		struct thread* target_child= list_entry(list_front(&curr->children_list), struct thread, child_elem);
-		while(&target_child->child_elem!=list_end(&curr->children_list)){
-			if ( target_child->tid == child_tid ){
-				break;
+		while (&target_child->tid != child_tid){
+			if (&target_child->child_elem == list_end(&curr->children_list) ){
+				intr_set_level (old_level);
+				return -1;		
 			}
 			target_child=list_entry(list_next(&target_child->child_elem), struct thread, child_elem);
 		}
-
-		if ( &target_child->child_elem==list_end(&curr->children_list) ){
-			intr_set_level (old_level);
-			return -1;		
-		}
+		
+		/* Revised code to upper one */
+		// while(&target_child->child_elem!=list_end(&curr->children_list)){
+		// 	if ( target_child->tid == child_tid ){
+		// 		break;
+		// 	}
+		// 	target_child=list_entry(list_next(&target_child->child_elem), struct thread, child_elem);
+		// }
+		// if ( &target_child->child_elem==list_end(&curr->children_list) ){
+		// 	intr_set_level (old_level);
+		// 	return -1;		
+		// }
+		
 		list_remove(&target_child->child_elem);
 		intr_set_level (old_level);
 		return target_child->exit_status;

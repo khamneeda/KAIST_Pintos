@@ -232,6 +232,17 @@ thread_create (const char *name, int priority,
 	struct semaphore load_sema;
 	sema_init(&load_sema, 0);
 	t->load_sema= &load_sema;
+
+	if (name == "idle"){
+		struct thread* main_t = thread_current();
+		struct semaphore exit_sema_main;
+		struct semaphore load_sema_main;
+		sema_init(&exit_sema_main, 0);
+		sema_init(&load_sema_main, 0);
+		main_t->exit_sema= &exit_sema_main;
+		main_t->load_sema= &load_sema_main;
+	}
+	else t->parent = thread_current();
 	#endif
 
 
@@ -605,7 +616,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->exit_status=-1;
 	t->load_status=-1;
 	list_init(&t->children_list);
-	t->parent=thread_current();
+	//t->parent=thread_current(); 여기서하면 에러남
 #endif
 
 }

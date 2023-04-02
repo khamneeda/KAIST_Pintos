@@ -166,6 +166,11 @@ sys_halt (uint64_t* args) {
 
 void
 sys_exit (uint64_t* args) {
+
+	//wait 구현 후 status kernel에 넘겨주는 코드 추가. parent에 접근해서 child의 status를 저장?
+	struct thread* t = thread_current();
+	printf("%s: exit(%d)\n", t->name, arg[1]);
+	thread_exit (t);
 }
 
 int64_t

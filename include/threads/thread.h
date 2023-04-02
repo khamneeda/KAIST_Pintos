@@ -109,6 +109,16 @@ struct thread {
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
 	uint64_t *pml4;                     /* Page map level 4 */
+	int is_exit;       //1  : 종료  0: 실행
+	int exit_status;   //0  : 정상 -1: error
+	int load_status;   //0  : 정상 -1: error
+	struct list children_list;
+	struct list_elem child_elem;
+	struct thread * parent;
+    
+	struct semaphore exit_sema;
+	struct semaphore load_sema;
+
 #endif
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */

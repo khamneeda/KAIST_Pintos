@@ -17,7 +17,7 @@
 #include "threads/thread.h"
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
-#include "threads/synch.h"
+#include "threads/synch.h" //Added for semaphore approach
 #include "intrinsic.h"
 #ifdef VM
 #include "vm/vm.h"
@@ -58,9 +58,9 @@ process_create_initd (const char *file_name) {
 	
 	// enum intr_level old_level;
 	// old_level = intr_disable ();
-	// struct thread* child = get_thread(tid);
-	// list_push_back(&child->exit_sema->waiters, &thread_current()->elem);
-	// child->parent = thread_current();
+	struct thread* child = get_thread(tid);
+	list_push_back(&child->exit_sema->waiters, &thread_current()->elem);
+	child->parent = thread_current();
 	// intr_set_level(old_level);
 
 	return tid;

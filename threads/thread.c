@@ -225,6 +225,10 @@ thread_create (const char *name, int priority,
 	if (name != "idle")	list_push_back(&total_list,&t->total_list_elem);
 
 	#ifdef USERPROG
+	// sema_init(t->exit_sema, 0);
+	// sema_init(t->load_sema, 0);
+
+
 	struct semaphore exit_sema;
 	sema_init(&exit_sema, 0);
 	t->exit_sema= &exit_sema;
@@ -233,16 +237,19 @@ thread_create (const char *name, int priority,
 	sema_init(&load_sema, 0);
 	t->load_sema= &load_sema;
 
-	if (name == "idle"){
-		struct thread* main_t = thread_current();
-		struct semaphore exit_sema_main;
-		struct semaphore load_sema_main;
-		sema_init(&exit_sema_main, 0);
-		sema_init(&load_sema_main, 0);
-		main_t->exit_sema= &exit_sema_main;
-		main_t->load_sema= &load_sema_main;
-	}
-	else t->parent = thread_current();
+	//main thread의 sema 초기화 코드 -> 필요없는듯
+	// if (name == "idle"){
+	// 	struct thread* main_t = thread_current();
+	// 	struct semaphore exit_sema_main;
+	// 	struct semaphore load_sema_main;
+	// 	sema_init(&exit_sema_main, 0);
+	// 	sema_init(&load_sema_main, 0);
+	// 	main_t->exit_sema= &exit_sema_main;
+	// 	main_t->load_sema= &load_sema_main;
+	// }
+
+	//fork에서 해줄거라 메인 스레드 해주는 의미 말고는 아랫줄 의미 없을듯
+	//t->parent = thread_current();
 	#endif
 
 
@@ -370,6 +377,15 @@ thread_current (void) {
 	ASSERT (t->status == THREAD_RUNNING);
 
 	return t;
+}
+/* Get thread corresponding to tid */
+struct thread*
+get_thread(tid_t tid){
+	for (struct list_elem* c = list_front(&total_list); c != list_end(&total_list); c = c->next){
+		struct thread* t = list_entry(c,struct thread, total_list_elem);
+		if (t->tid == tid) return t;
+	}
+	ASSERT(1 == 2);
 }
 
 /* Returns the running thread's tid. */

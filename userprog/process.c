@@ -17,6 +17,7 @@
 #include "threads/thread.h"
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
+#include "threads/synch.h"
 #include "intrinsic.h"
 #ifdef VM
 #include "vm/vm.h"
@@ -54,6 +55,14 @@ process_create_initd (const char *file_name) {
 	tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
 	if (tid == TID_ERROR)
 		palloc_free_page (fn_copy);
+	
+	// enum intr_level old_level;
+	// old_level = intr_disable ();
+	// struct thread* child = get_thread(tid);
+	// list_push_back(&child->exit_sema->waiters, &thread_current()->elem);
+	// child->parent = thread_current();
+	// intr_set_level(old_level);
+
 	return tid;
 }
 
@@ -199,44 +208,39 @@ process_exec (void *f_name) {
  *
  * This function will be implemented in problem 2-2.  For now, it
  * does nothing. */
+//parent의 child_list에 넣는거랑 child의 parent를 지정하는 건 fork에서 따로 해줘야함
 int
 process_wait (tid_t child_tid) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
-	struct thread* curr= thread_current();
-	sema_down(curr->exit_sema);
+	struct thread* child = get_thread(child_tid);
+	sema_down(child->exit_sema);//부모가 아니라 자식의 sema여야함 -> 자식세마 웨이터에 부모넣기
 
-	enum intr_level old_level;
-	old_level = intr_disable ();
+	//interrupt 왜 넣었는지 모르겠음
+	//스레드 중간에 kill될까봐 넣은거같음
+	//enum intr_level old_level;
+	//old_level = intr_disable ();
 
+	//pop child in children_list in parent
+	struct thread* curr = thread_current();
 	if(!list_empty(&curr->children_list)){
 		struct thread* target_child= list_entry(list_front(&curr->children_list), struct thread, child_elem);
 		while (&target_child->tid != child_tid){
 			if (&target_child->child_elem == list_end(&curr->children_list) ){
-				intr_set_level (old_level);
+				//intr_set_level (old_level);
 				return -1;		
 			}
 			target_child=list_entry(list_next(&target_child->child_elem), struct thread, child_elem);
 		}
-		
-		/* Revised code to upper one */
-		// while(&target_child->child_elem!=list_end(&curr->children_list)){
-		// 	if ( target_child->tid == child_tid ){
-		// 		break;
-		// 	}
-		// 	target_child=list_entry(list_next(&target_child->child_elem), struct thread, child_elem);
-		// }
-		// if ( &target_child->child_elem==list_end(&curr->children_list) ){
-		// 	intr_set_level (old_level);
-		// 	return -1;		
-		// }
-		
 		list_remove(&target_child->child_elem);
-		intr_set_level (old_level);
+		//intr_set_level (old_level);
 		return target_child->exit_status;
 	}
-	intr_set_level (old_level);
+	
+	
+	//intr_set_level (old_level);
+	
 	return -1;
 }
 
@@ -252,7 +256,7 @@ process_exit (void) {
 	curr->is_exit=1;
 	process_cleanup ();
 	printf("%s: exit(%d)\n", curr->name, curr->exit_status);
-	sema_up(curr->parent->exit_sema);
+	sema_up(curr->exit_sema);
 }
 
 /* Free the current process's resources. */

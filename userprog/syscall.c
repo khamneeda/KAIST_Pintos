@@ -59,6 +59,7 @@ syscall_handler (struct intr_frame *f) {
 	// TODO: Your implementation goes here.
 	if(!check_address(f->rsp)){
 		printf("not\n");
+		//exit(-1);
 	}
 
 	/* Get arguments */

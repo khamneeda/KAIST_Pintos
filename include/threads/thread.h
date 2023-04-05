@@ -155,6 +155,9 @@ void dis_intr_treason (struct thread *);
 void thread_treason (struct thread *);
 
 struct thread *thread_current (void);
+
+struct thread* get_thread(tid_t);
+
 tid_t thread_tid (void);
 const char *thread_name (void);
 

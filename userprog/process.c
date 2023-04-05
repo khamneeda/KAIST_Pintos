@@ -17,8 +17,8 @@
 #include "threads/thread.h"
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
-#include "threads/synch.h" //Added for semaphore approach
-#include "threads/thread.c" //Added to use ready_list
+//#include "threads/synch.h" //Added for semaphore approach
+//#include "threads/thread.c" //Added to use ready_list
 #include "intrinsic.h"
 #ifdef VM
 #include "vm/vm.h"
@@ -242,12 +242,12 @@ process_wait (tid_t child_tid) {
 	//child의 status를 ready로 바꿔주고 ready_list에 넣어줌 이건 해줘야함
 	struct thread* child = get_thread(child_tid);
 	child->status = THREAD_READY;
-	list_insert_ordered(&ready_list, &child->elem, less_priority, 0);
+	thread_push_ready_list(child);
 
 	intr_set_level(old_level);
 
 	//sema_down이 알아서 curr BLOCK으로 바꿔서 waiters에 넣어줌
-	sema_down(child->exit_sema);//부모가 아니라 자식의 sema여야함 -> 자식세마 웨이터에 부모넣기
+	thread_sema_down(child->exit_sema);//부모가 아니라 자식의 sema여야함 -> 자식세마 웨이터에 부모넣기
 
 
 	//pop child in child_list in parent

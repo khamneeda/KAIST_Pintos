@@ -9,10 +9,6 @@
 #include "vm/vm.h"
 #endif
 
-// /* List of processes in THREAD_READY state, that is, processes
-//    that are ready to run but not actually running. */
-// static struct list ready_list;
-
 
 
 /* States in a thread's life cycle. */
@@ -207,3 +203,7 @@ void mlfqs_update_priority (struct thread *);
 void mlfqs_update_all_thread (void);
 void mlfqs_update_all_threads_on_list (struct list*);
 bool is_idle(void);
+
+
+void thread_sema_down (struct semaphore *);
+void thread_push_ready_list(struct thread* );

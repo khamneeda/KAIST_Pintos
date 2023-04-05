@@ -910,3 +910,13 @@ void mlfqs_update_all_threads_on_list (struct list* list_addr){
 bool is_idle(void){
 	return thread_current() == idle_thread;
 }
+
+/* Defined to use things in process.c */
+
+void thread_sema_down (struct semaphore * sem){
+	sema_down(sem);
+}
+
+void thread_push_ready_list(struct thread* t){
+	list_insert_ordered(&ready_list, &t->elem, less_priority, 0);
+}

@@ -143,7 +143,7 @@ thread_init (void) {
 	init_thread (initial_thread, "main", PRI_DEFAULT);
 	initial_thread->status = THREAD_RUNNING;
 	initial_thread->tid = allocate_tid ();
-	list_push_back(&total_list,&initial_thread->total_list_elem);
+	list_push_back(&total_list,&initial_thread->total_list_elem);//main에도 이게 필요함?
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -631,7 +631,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->is_exit=0;
 	t->exit_status=-1;
 	t->load_status=-1;
-	list_init(&t->children_list);
+	list_init(&t->child_list);
 	//t->parent=thread_current(); 여기서하면 에러남
 #endif
 

@@ -18,6 +18,7 @@
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
 #include "threads/synch.h" //Added for semaphore approach
+#include "threads/thread.c" //Added to use ready_list
 #include "intrinsic.h"
 #ifdef VM
 #include "vm/vm.h"
@@ -56,13 +57,14 @@ process_create_initd (const char *file_name) {
 	if (tid == TID_ERROR)
 		palloc_free_page (fn_copy);
 	
-	// enum intr_level old_level;
-	// old_level = intr_disable ();
+	enum intr_level old_level;
+	old_level = intr_disable ();
+	
 	struct thread* child = get_thread(tid);
-	list_push_back(&child->exit_sema->waiters, &thread_current()->elem);
 	child->parent = thread_current();
-	// intr_set_level(old_level);
+	list_push_back(&thread_current()->child_list, &child->child_elem);
 
+	intr_set_level(old_level);
 	return tid;
 }
 
@@ -169,6 +171,7 @@ error:
 
 /* Switch the current execution context to the f_name.
  * Returns -1 on fail. */
+/* 여기에서 fork와 wait을 모두 해 줌*/
 int
 process_exec (void *f_name) {
 	char *file_name = f_name;
@@ -208,39 +211,71 @@ process_exec (void *f_name) {
  *
  * This function will be implemented in problem 2-2.  For now, it
  * does nothing. */
-//parent의 child_list에 넣는거랑 child의 parent를 지정하는 건 fork에서 따로 해줘야함
+
+/*
+	wait전에 kill될 경우 자식 알 수 없기 때문에 fork에서 다음을 해줘야 함
+	1. child->parent 지정 // 이건 fork에서 해줘야할듯 wait전에 kill되면 
+	2. parent->child_list에 추가
+	대신 main의 경우 process_initd에서 따로 해줘야
+
+	여기서 해줄 것
+	3. child status = READY
+	그외 sema_down이 해주는 것: parent block, waiters 추가, pop, parent ready
+
+	이외 할 것
+	if child exist -> status 반환
+	else -> -1
+
+	kill과 exit에서 반드시 status를 지정한 후 종료해야 함
+
+	main_thread 실행시 sema_down전에 intr가 걸리면 조기종료됨 ->disable
+*/
 int
 process_wait (tid_t child_tid) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
+
+	enum intr_level old_level;
+	old_level = intr_disable ();
+
+	//child의 status를 ready로 바꿔주고 ready_list에 넣어줌 이건 해줘야함
 	struct thread* child = get_thread(child_tid);
+	child->status = THREAD_READY;
+	list_insert_ordered(&ready_list, &child->elem, less_priority, 0);
+
+	intr_set_level(old_level);
+
+	//sema_down이 알아서 curr BLOCK으로 바꿔서 waiters에 넣어줌
 	sema_down(child->exit_sema);//부모가 아니라 자식의 sema여야함 -> 자식세마 웨이터에 부모넣기
 
-	//interrupt 왜 넣었는지 모르겠음
-	//스레드 중간에 kill될까봐 넣은거같음
-	//enum intr_level old_level;
-	//old_level = intr_disable ();
 
-	//pop child in children_list in parent
+	//pop child in child_list in parent
+
+	/*
+	자원해제
+	exit, kill 후 schedule이 두번 돌면 exit_status를 알 수 없기 때문에
+	1. exit, kill 후 바로 sema_up 해주기
+	2. 이 함수에서 sema_down이후로 intr_disable()
+	*/
+
+	old_level = intr_disable ();
+
 	struct thread* curr = thread_current();
-	if(!list_empty(&curr->children_list)){
-		struct thread* target_child= list_entry(list_front(&curr->children_list), struct thread, child_elem);
+	if(!list_empty(&curr->child_list)){
+		struct thread* target_child= list_entry(list_front(&curr->child_list), struct thread, child_elem);
 		while (&target_child->tid != child_tid){
-			if (&target_child->child_elem == list_end(&curr->children_list) ){
-				//intr_set_level (old_level);
+			if (&target_child->child_elem == list_end(&curr->child_list) ){
+				intr_set_level (old_level);
 				return -1;		
 			}
 			target_child=list_entry(list_next(&target_child->child_elem), struct thread, child_elem);
 		}
 		list_remove(&target_child->child_elem);
-		//intr_set_level (old_level);
+		intr_set_level (old_level);
 		return target_child->exit_status;
 	}
-	
-	
-	//intr_set_level (old_level);
-	
+	intr_set_level (old_level);
 	return -1;
 }
 

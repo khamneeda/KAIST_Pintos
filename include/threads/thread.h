@@ -9,6 +9,10 @@
 #include "vm/vm.h"
 #endif
 
+// /* List of processes in THREAD_READY state, that is, processes
+//    that are ready to run but not actually running. */
+// static struct list ready_list;
+
 
 
 /* States in a thread's life cycle. */
@@ -112,7 +116,7 @@ struct thread {
 	int is_exit;       //1  : 종료  0: 실행
 	int exit_status;   //0  : 정상 -1: error
 	int load_status;   //0  : 정상 -1: error
-	struct list children_list;
+	struct list child_list;
 	struct list_elem child_elem;
 	struct thread * parent;
     

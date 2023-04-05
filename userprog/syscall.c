@@ -8,6 +8,9 @@
 #include "threads/flags.h"
 #include "intrinsic.h"
 
+
+#include "include/lib/string.h"
+
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
 
@@ -91,36 +94,46 @@ syscall_handler (struct intr_frame *f) {
 			break;		
 		case SYS_FORK:
 			update = sys_fork(args);
+			f->R.rax = update; 
 			break;		
 		case SYS_EXEC:
 			update = sys_exec(args);
+			f->R.rax = update; 
 			break;		
 		case SYS_WAIT:
 			update = sys_wait(args);
+			f->R.rax = update; 
 			break;		
 		case SYS_CREATE:
 			update = sys_create(args);
+			f->R.rax = update; 
 			break;		
 		case SYS_REMOVE:
 			update = sys_remove(args);
+			f->R.rax = update; 
 			break;		
 		case SYS_OPEN:
 			update = sys_open(args);
+			f->R.rax = update; 
 			break;		
 		case SYS_FILESIZE:
 			update = sys_filesize(args);
+			f->R.rax = update; 
 			break;		
 		case SYS_READ:
 			update = sys_read(args);
+			f->R.rax = update; 
 			break;		
 		case SYS_WRITE:
 			update = sys_write(args);
+			f->R.rax = update; 
 			break;		
 		case SYS_SEEK:
 			sys_seek(args);
 			break;		
 		case SYS_TELL:
 			update = sys_tell(args);
+			f->R.rax = update; 
 			break;		
 		case SYS_CLOSE:
 			sys_close(args);
@@ -145,7 +158,7 @@ syscall_handler (struct intr_frame *f) {
 		*/
 
 	}
-
+	
 }
 
 int
@@ -159,7 +172,8 @@ check_address(uintptr_t f){
 			return 1;
 		}
 	}
-	return 0;  
+	return 0;
+	//exit(-1);  
 }
 
 
@@ -174,7 +188,7 @@ sys_exit (uint64_t* args) {
 	//wait 구현 후 status kernel에 넘겨주는 코드 추가. parent에 접근해서 child의 status를 저장?
 	struct thread* t = thread_current();
 	//printf("%s: exit(%d)\n", t->name, arg[1]);
-	t->exit_status=args[1];
+	t->exit_status=(int) args[1];
 	thread_exit();
 }
 
@@ -195,16 +209,27 @@ sys_wait (uint64_t* args) {
 
 int64_t
 sys_create (uint64_t* args) {
-	return 0;
+	const char* name = (const char*) args[1];
+	int32_t initial_size= (int32_t) args[2]; //typedef int32_t off_t
+	if(name==NULL){ process_exit(-1); return (int64_t) false;}
+	if(!check_address(name)){process_exit(-1); return (int64_t) false;}
+	bool success = filesys_create (name, initial_size);
+	return (int64_t) success;
 }
 
 int64_t
 sys_remove (uint64_t* args) {
-	return 0;
+	//remove opening file??????
+	const char* name = (const char*) args[1];
+	bool success = filesys_remove (name);
+	return (int64_t) success;
 }
 
 int64_t
 sys_open (uint64_t* args) {
+	const char* name = (const char*) args[1];
+	//struct file * open_file = filesys_open (name);
+	//if(open_file==NULL) return -1;
 	return 0;
 }
 
@@ -220,7 +245,13 @@ sys_read (uint64_t* args) {
 
 int64_t
 sys_write (uint64_t* args) {
-	return 0;
+	int fd = (int) args[1];
+	const void * buffer = (const void *) args[2];
+	unsigned size = (unsigned) args[3];
+	/*char temp[20];
+	strlcpy(temp, buffer,size);
+	printf("%s\n",temp);*/
+	return 1;
 }
 
 void

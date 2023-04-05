@@ -52,8 +52,14 @@ process_create_initd (const char *file_name) {
 		return TID_ERROR;
 	strlcpy (fn_copy, file_name, PGSIZE);
 
+	size_t command_length = strlen(file_name);
+	char command[80];
+	strlcpy(command, file_name, command_length+1);
+	char* saving_str;
+    char* real_name = strtok_r (command, " ", &saving_str);
+
 	/* Create a new thread to execute FILE_NAME. */
-	tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
+	tid = thread_create (real_name, PRI_DEFAULT, initd, fn_copy);
 	if (tid == TID_ERROR)
 		palloc_free_page (fn_copy);
 	
@@ -398,7 +404,7 @@ Get the number of splited words in command line.
 */
 int get_rank(const char *file_name) {
    size_t s_length = strlen(file_name);
-   size_t temp_size=80;
+   size_t temp_size=100;
    char s[temp_size];
 
    //if(s_length < temp_size) strlcpy(s, file_name, s_length+1);
@@ -443,10 +449,10 @@ load (const char *file_name, struct intr_frame *if_) {
 	/* Split command line */
 	int arg_len = get_rank(file_name);
 	size_t command_length = strlen(file_name);
-	char command[80];
+	char command[100];
 	strlcpy(command, file_name, command_length+1);
 
-	const char* arg[20] = {NULL, };
+	const char* arg[50] = {NULL, };
 	char* saving_str;
 	char* tocken;
 	int j = 0;
@@ -454,7 +460,6 @@ load (const char *file_name, struct intr_frame *if_) {
         arg[j] = tocken;
         j++;
     }
-
 	const char* name_of_file = arg[0];
 
 
@@ -543,7 +548,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	 * TODO: Implement argument passing (see project2/argument_passing.html). */
 
 
-	char * arg_addr[20] = {0, };
+	char * arg_addr[50] = {0, };
 
 
 	/* Argument data */

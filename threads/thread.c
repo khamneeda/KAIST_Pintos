@@ -8,7 +8,7 @@
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
 #include "threads/palloc.h"
-#include "threads/synch.h"
+//#include "threads/synch.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
 #ifdef USERPROG
@@ -225,31 +225,11 @@ thread_create (const char *name, int priority,
 	if (name != "idle")	list_push_back(&total_list,&t->total_list_elem);
 
 	#ifdef USERPROG
-	// sema_init(t->exit_sema, 0);
-	// sema_init(t->load_sema, 0);
+	sema_init(&t->exit_sema, 0);
+	sema_init(&t->load_sema, 0);
 
 
-	struct semaphore exit_sema;
-	sema_init(&exit_sema, 0);
-	t->exit_sema= &exit_sema;
 
-	struct semaphore load_sema;
-	sema_init(&load_sema, 0);
-	t->load_sema= &load_sema;
-
-	//main thread의 sema 초기화 코드 -> 필요없는듯
-	// if (name == "idle"){
-	// 	struct thread* main_t = thread_current();
-	// 	struct semaphore exit_sema_main;
-	// 	struct semaphore load_sema_main;
-	// 	sema_init(&exit_sema_main, 0);
-	// 	sema_init(&load_sema_main, 0);
-	// 	main_t->exit_sema= &exit_sema_main;
-	// 	main_t->load_sema= &load_sema_main;
-	// }
-
-	//fork에서 해줄거라 메인 스레드 해주는 의미 말고는 아랫줄 의미 없을듯
-	//t->parent = thread_current();
 	#endif
 
 

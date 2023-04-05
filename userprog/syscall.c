@@ -79,7 +79,10 @@ syscall_handler (struct intr_frame *f) {
 	Use int64_t for updating rax to match the type of ret in syscall.
 	*/
 	int64_t update;
+	//printf("syscall: rax:%d\n",f->R.rax);
 	switch (f->R.rax){
+		default:
+		   	thread_exit ();
 		case SYS_HALT:
 			sys_halt(args);
 			break;		
@@ -142,12 +145,12 @@ syscall_handler (struct intr_frame *f) {
 		*/
 
 	}
-	thread_exit ();
+
 }
 
 int
 check_address(uintptr_t f){
-	printf("%lld",KERN_BASE);
+	//printf("%lld",KERN_BASE);
 	if(f != NULL && f < KERN_BASE){
 		struct thread* curr=thread_current();
 		const uint64_t va = f;

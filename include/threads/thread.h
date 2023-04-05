@@ -1,6 +1,7 @@
 #ifndef THREADS_THREAD_H
 #define THREADS_THREAD_H
 
+#include "threads/synch.h"
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
@@ -116,8 +117,8 @@ struct thread {
 	struct list_elem child_elem;
 	struct thread * parent;
     
-	struct semaphore* exit_sema;
-	struct semaphore* load_sema;
+	struct semaphore exit_sema;
+	struct semaphore load_sema;
 
 #endif
 #ifdef VM

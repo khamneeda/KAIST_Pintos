@@ -241,8 +241,8 @@ process_wait (tid_t child_tid) {
 
 	//child의 status를 ready로 바꿔주고 ready_list에 넣어줌 이건 해줘야함
 	struct thread* child = get_thread(child_tid);
-	child->status = THREAD_READY;
-	thread_push_ready_list(child);
+	//child->status = THREAD_READY;
+	//thread_push_ready_list(child);
 
 	intr_set_level(old_level);
 

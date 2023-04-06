@@ -612,7 +612,11 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->exit_status=-1;
 	t->load_status=-1;
 	list_init(&t->child_list);
-	//t->parent=thread_current(); 여기서하면 에러남
+
+	//사람있어요!!!
+	t->fd_table = {0, }; // Memory allocation?
+	t->num_of_fd = 2;
+
 #endif
 
 }

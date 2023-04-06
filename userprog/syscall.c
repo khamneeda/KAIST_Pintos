@@ -7,7 +7,8 @@
 #include "userprog/gdt.h"
 #include "threads/flags.h"
 #include "intrinsic.h"
-
+#include "filesys/filesys.h"
+#include "filesys/inode.c"
 
 #include "include/lib/string.h"
 
@@ -29,6 +30,7 @@ int64_t sys_write (uint64_t* );
 void sys_seek (uint64_t*);
 int64_t sys_tell (uint64_t*);
 void sys_close (uint64_t*);
+struct file* get_file(int);
 
 /* System call.
  *
@@ -217,10 +219,19 @@ sys_create (uint64_t* args) {
 	return (int64_t) success;
 }
 
+
+
 int64_t
 sys_remove (uint64_t* args) {
-	//remove opening file??????
 	const char* name = (const char*) args[1];
+
+	//Update removed state of inode
+	struct inode* target_inode = get_inode(name);
+	if (target_inode == NULL) return (int64_t) false;
+	inode_remove(target_inode);
+	if (target_inode->open_cnt != 0) return (int64_t) true;
+
+	// Free memory
 	bool success = filesys_remove (name);
 	return (int64_t) success;
 }
@@ -228,18 +239,54 @@ sys_remove (uint64_t* args) {
 int64_t
 sys_open (uint64_t* args) {
 	const char* name = (const char*) args[1];
-	//struct file * open_file = filesys_open (name);
-	//if(open_file==NULL) return -1;
+	struct file * open_file = filesys_open (name);
+	if(open_file==NULL) return -1;
+
+	/*
+	ASSERT(thread->num_of_fd != 30);
+	1. fd_table에 추가, num_of_fd++
+	// inode->cnt는 알아서 이미 올라감
+	3. fd 반환
+	*/
+
 	return 0;
 }
 
 int64_t
 sys_filesize (uint64_t* args) {
-	return 0;
+	int fd = (int) args[1];
+	struct file* file = get_file(fd);
+	ASSERT(file != 0);
+	return (int64_t) file_length(file);
 }
 
+
+//추후 세마포어 넣기
 int64_t
 sys_read (uint64_t* args) {
+
+	int fd = (int) args[1];
+	void* buffer = (void*) args[2];
+	unsigned size = (unsigned) args[3];
+
+
+	/*
+	현재 읽는 위치가 파일 끝 이후면 0바이트 읽음
+
+	buffer의 주소 userland 확인
+	fd switch
+	case 0 input_getc()이용
+	case 1 return -1;
+	default
+		file = get_file
+		file != 0 확인
+		size만큼 read_byte = file_read(file*, buffer, size)
+		read_byte return
+	1. 
+	
+	*/
+
+
 	return (int64_t) 0;
 }
 
@@ -248,21 +295,50 @@ sys_write (uint64_t* args) {
 	int fd = (int) args[1];
 	const void * buffer = (const void *) args[2];
 	unsigned size = (unsigned) args[3];
+
+	//	현재 읽는 위치가 파일 끝 이후면 에러
+	/*
+	버퍼 사이즈가 100 넘으면 분할해주기
+	분할 개수 파악해서 for문으로 putbuf(), 중간중간 seek해줘야함 : 위치바꿔서 이어서 쓰게
+	얘도 fd switch
+	fd == 1 putbuf이용해 콘솔에 써야함 -> 그전에 버퍼에 넣어서
+	defqult
+	filesys_write이용해 짜기
+	
+	*/
+
 	/*char temp[20];
 	strlcpy(temp, buffer,size);
 	printf("%s\n",temp);*/
 	return 1;
+	putbuf()
 }
 
 void
 sys_seek (uint64_t* args) {
+	int fd = (int) args[1];
+	unsigned position = (unsigned) args[2];
+	struct file* file = get_file(fd);
+	file_seek(file, position);
 }
 
 int64_t
 sys_tell (uint64_t* args) {
-	return 0;
+	int fd = (int) args[1];
+	struct file* file = get_file(fd);
+	return file_tell(file);
 }
 
 void
 sys_close (uint64_t* args) {
+	int fd = (int) args[1];
+	struct file* file = get_file(fd);
+	file_close(file);
+}
+
+struct file*
+get_file(int fd){
+	ASSERT (thread_current()->num_of_fd != 30);
+	struct file* file = thread_current()->fd_table[fd];
+	return file;
 }

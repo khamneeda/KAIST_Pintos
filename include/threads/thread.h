@@ -120,6 +120,9 @@ struct thread {
 	struct semaphore exit_sema;
 	struct semaphore load_sema;
 
+	struct file* fd_table [30];
+	int num_of_fd;
+
 #endif
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */

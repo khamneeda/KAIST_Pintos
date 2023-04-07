@@ -252,7 +252,7 @@ sys_open (uint64_t* args) {
     const char* name = (const char *) args[1];
     struct thread* curr = thread_current();
     ASSERT(curr->num_of_fd != 30); // If error, increase the number of entry in thread.h
-
+    if(!check_address(name)) return -1;
     struct file * open_file = filesys_open (name);
     if (open_file == NULL) return -1;
     curr->fd_table[curr->num_of_fd] = open_file;
@@ -265,7 +265,7 @@ sys_open (uint64_t* args) {
     // 3. fd 반환
     // */
 
-    return 0;
+    return curr->num_of_fd;
 }
 
 int64_t
@@ -287,7 +287,7 @@ sys_read (uint64_t* args) {
 	int read_byte = 0;
 	uint8_t key;
 
-	if (buffer >= KERN_BASE) sys_exit_num(-1); // Or return -1? Or put it in default
+	if (!check_address(buffer)) sys_exit_num(-1); // Or return -1? Or put it in default
 
 	struct file* file;
 	switch (fd){
@@ -352,7 +352,7 @@ sys_write (uint64_t* args) {
 	
 	// */
 	int write_byte=0;
-	if (buffer >= KERN_BASE) sys_exit_num(-1); 
+	if (!check_address(buffer)) sys_exit_num(-1);
 
 	struct file* file;
 	long rest;

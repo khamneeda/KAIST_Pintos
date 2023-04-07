@@ -315,16 +315,16 @@ sys_read (uint64_t* args) {
 
 	return (int64_t) 0;
 }
-
 int64_t
 sys_write (uint64_t* args) {
 	int fd = (int) args[1];
 	const void * buffer = (const void *) args[2];
 	unsigned size = (unsigned) args[3];
 
+	
+	//	현재 읽는 위치가 파일 끝 이후면 에러 
 
-
-	//	현재 읽는 위치가 파일 끝 이후면 에러
+	// 
 	/*
 	버퍼 사이즈가 100 넘으면 분할해주기
 	분할 개수 파악해서 for문으로 putbuf(), 중간중간 seek해줘야함 : 위치바꿔서 이어서 쓰게
@@ -334,11 +334,31 @@ sys_write (uint64_t* args) {
 	filesys_write이용해 짜기
 	
 	*/
+	int write_byte=0;
+	if(!check_address(buffer)) {process_exit();}
 
-	/*char temp[20];
-	strlcpy(temp, buffer,size);
-	printf("%s\n",temp);*/
-	return 1;
+	switch (fd){
+		case 0:
+			return (int64_t) 0;
+
+		case 1:
+			unsigned long rest =(unsigned long) size; 
+			unsigned long temp_size = 100;
+			while(rest>=0){
+			temp_size= rest<temp_size? rest :temp_size;
+			putbuf (buffer, temp_size);
+			rest=rest-100;
+			}
+			write_byte=size-rest+100;
+			return write_byte;
+		default:
+			struct file* file = get_file(fd);
+			if (file == NULL) return 0;
+			lock_acquire(&file->inode->rw_lock);
+			write_byte = file_write(file, buffer, size);
+			lock_release(&file->inode->rw_lock);
+			return write_byte;
+	}
 }
 
 void

@@ -20,6 +20,7 @@ void syscall_handler (struct intr_frame *);
 int check_address(uintptr_t);
 void sys_halt (uint64_t *);
 void sys_exit (uint64_t *); 
+void sys_exit_num (int); 
 int64_t sys_fork (uint64_t *);
 int64_t sys_exec (uint64_t *); 
 int64_t sys_wait (uint64_t *); 
@@ -187,13 +188,16 @@ sys_halt (uint64_t* args) {
 }
 
 void
-sys_exit (uint64_t* args) {
-
-	//wait 구현 후 status kernel에 넘겨주는 코드 추가. parent에 접근해서 child의 status를 저장?
+sys_exit_num (int status) {
 	struct thread* t = thread_current();
-	//printf("%s: exit(%d)\n", t->name, arg[1]);
-	t->exit_status=(int) args[1];
+	t->exit_status=status;
 	thread_exit();
+}
+
+void
+sys_exit (uint64_t* args) {
+	//wait 구현 후 status kernel에 넘겨주는 코드 추가. parent에 접근해서 child의 status를 저장?
+	sys_exit_num ((int) args[1]);
 }
 
 int64_t
@@ -215,8 +219,8 @@ int64_t
 sys_create (uint64_t* args) {
 	const char* name = (const char*) args[1];
 	int32_t initial_size= (int32_t) args[2]; //typedef int32_t off_t
-	if(name==NULL){ process_exit(-1); return (int64_t) false;}
-	if(!check_address(name)){process_exit(-1); return (int64_t) false;}
+	if(name==NULL){ sys_exit_num(-1); return (int64_t) false;}
+	if(!check_address(name)){sys_exit_num(-1); return (int64_t) false;}
 	bool success = filesys_create (name, initial_size);
 	return (int64_t) success;
 }

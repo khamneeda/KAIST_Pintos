@@ -614,7 +614,8 @@ init_thread (struct thread *t, const char *name, int priority) {
 	list_init(&t->child_list);
 
 	//사람있어요!!!
-	t->fd_table = {0, }; // Memory allocation?
+	memset(t->fd_table, 0, 30*sizeof(struct file*));
+	// t->fd_table = {0, }; // Memory allocation?
 	t->num_of_fd = 2;
 
 #endif

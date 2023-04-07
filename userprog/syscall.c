@@ -7,9 +7,10 @@
 #include "userprog/gdt.h"
 #include "threads/flags.h"
 #include "intrinsic.h"
+///////////
 #include "filesys/filesys.h"
-#include "filesys/inode.c"
-#include "filesys/file.c"
+#include "filesys/inode.h"
+#include "filesys/file.h"
 
 #include "include/lib/string.h"
 
@@ -227,30 +228,39 @@ sys_remove (uint64_t* args) {
 	const char* name = (const char*) args[1];
 
 	//Update removed state of inode
-	struct inode* target_inode = get_inode(name);
-	if (target_inode == NULL) return (int64_t) false;
-	inode_remove(target_inode);
-	if (target_inode->open_cnt != 0) return (int64_t) true;
+	// struct inode* target_inode = get_inode(name);
+	// if (target_inode == NULL) return (int64_t) false;
+	// inode_remove(target_inode);
+	// if (target_inode->open_cnt != 0) return (int64_t) true;
 
 	// Free memory
 	bool success = filesys_remove (name);
 	return (int64_t) success;
 }
 
+/*
+fd를 일단 0,1 빼고 2부터 생성했음
+extra 짤 때, 0부터 생성하고 뒷단에서 +-2 처리해주도록 변경해야
+*/
 int64_t
 sys_open (uint64_t* args) {
-	const char* name = (const char*) args[1];
-	struct file * open_file = filesys_open (name);
-	if(open_file==NULL) return -1;
+    const char* name = (const char *) args[1];
+    struct thread* curr = thread_current();
+    ASSERT(curr->num_of_fd != 30); // If error, increase the number of entry in thread.h
 
-	/*
-	ASSERT(thread->num_of_fd != 30);
-	1. fd_table에 추가, num_of_fd++
-	// inode->cnt는 알아서 이미 올라감
-	3. fd 반환
-	*/
+    struct file * open_file = filesys_open (name);
+    if (open_file == NULL) return -1;
+    curr->fd_table[curr->num_of_fd] = open_file;
+    curr->num_of_fd++;
 
-	return 0;
+    // /*
+    // ASSERT(thread->num_of_fd != 30);
+    // 1. fd_table에 추가, num_of_fd++
+    // // inode->cnt는 알아서 이미 올라감
+    // 3. fd 반환
+    // */
+
+    return 0;
 }
 
 int64_t
@@ -262,7 +272,7 @@ sys_filesize (uint64_t* args) {
 }
 
 
-//추후 세마포어 넣기
+// //추후 세마포어 넣기
 int64_t
 sys_read (uint64_t* args) {
 
@@ -274,6 +284,7 @@ sys_read (uint64_t* args) {
 
 	if (buffer >= KERN_BASE) sys_exit(-1); // Or return -1? Or put it in default
 
+	struct file* file;
 	switch (fd){
 		case 0:
 			key = input_getc();
@@ -284,33 +295,34 @@ sys_read (uint64_t* args) {
 				buffer[read_byte] = key;
 				read_byte++;
 			}
+			return (int64_t) read_byte;
 
 		case 1:
 			return (int64_t) -1;
 
 		default:
-			struct file* file = get_file(fd);
+			file = get_file(fd);
 			if (file == NULL) return -1;
 			lock_acquire(&file->inode->rw_lock);
 			read_byte = file_read(file, buffer, size);
 			lock_release(&file->inode->rw_lock);
-			return read_byte;
+			return (int64_t) read_byte;
 	}
 
-	/*
-	현재 읽는 위치가 파일 끝 이후면 0바이트 읽음
+	// /*
+	// 현재 읽는 위치가 파일 끝 이후면 0바이트 읽음
 
-	buffer의 주소 userland 확인 왜?
-	fd switch
-	case 0 input_getc()이용
-	case 1 return -1;
-	default
-		file = get_file
-		file != 0 확인
-		size만큼 read_byte = file_read(file*, buffer, size)
-		read_byte return
-	1. read write lock은 어떻게 설정?
-	*/
+	// buffer의 주소 userland 확인 왜?
+	// fd switch
+	// case 0 input_getc()이용
+	// case 1 return -1;
+	// default
+	// 	file = get_file
+	// 	file != 0 확인
+	// 	size만큼 read_byte = file_read(file*, buffer, size)
+	// 	read_byte return
+	// 1. read write lock은 어떻게 설정?
+	// */
 
 
 	return (int64_t) 0;
@@ -322,42 +334,46 @@ sys_write (uint64_t* args) {
 	unsigned size = (unsigned) args[3];
 
 	
-	//	현재 읽는 위치가 파일 끝 이후면 에러 
+	// //	현재 읽는 위치가 파일 끝 이후면 에러 
 
-	// 
-	/*
-	버퍼 사이즈가 100 넘으면 분할해주기
-	분할 개수 파악해서 for문으로 putbuf(), 중간중간 seek해줘야함 : 위치바꿔서 이어서 쓰게
-	얘도 fd switch
-	fd == 1 putbuf이용해 콘솔에 써야함 -> 그전에 버퍼에 넣어서
-	defqult
-	filesys_write이용해 짜기
+	// // 
+	// /*
+	// 버퍼 사이즈가 100 넘으면 분할해주기
+	// 분할 개수 파악해서 for문으로 putbuf(), 중간중간 seek해줘야함 : 위치바꿔서 이어서 쓰게
+	// 얘도 fd switch
+	// fd == 1 putbuf이용해 콘솔에 써야함 -> 그전에 버퍼에 넣어서
+	// defqult
+	// filesys_write이용해 짜기
 	
-	*/
+	// */
 	int write_byte=0;
 	if(!check_address(buffer)) {process_exit();}
 
+	struct file* file;
+	unsigned long rest;
 	switch (fd){
 		case 0:
 			return (int64_t) 0;
 
 		case 1:
-			unsigned long rest =(unsigned long) size; 
-			unsigned long temp_size = 100;
+			rest = (unsigned long) size; 
+			unsigned long temp_size;
+			temp_size = 100;
 			while(rest>=0){
 			temp_size= rest<temp_size? rest :temp_size;
 			putbuf (buffer, temp_size);
 			rest=rest-100;
 			}
-			write_byte=size-rest+100;
-			return write_byte;
+			return (int64_t) size;
 		default:
-			struct file* file = get_file(fd);
-			if (file == NULL) return 0;
+			file = get_file(fd);
+			if (file == NULL) 
+				return (int64_t) 0;
 			lock_acquire(&file->inode->rw_lock);
 			write_byte = file_write(file, buffer, size);
 			lock_release(&file->inode->rw_lock);
-			return write_byte;
+			ASSERT(write_byte >= 0);
+			return (int64_t) write_byte;
 	}
 }
 

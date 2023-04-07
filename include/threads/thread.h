@@ -110,18 +110,18 @@ struct thread {
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
 	uint64_t *pml4;                     /* Page map level 4 */
-	int is_exit;       //1  : 종료  0: 실행
-	int exit_status;   //0  : 정상 -1: error
-	int load_status;   //0  : 정상 -1: error
-	struct list child_list;
-	struct list_elem child_elem;
-	struct thread * parent;
+	int is_exit;       					//1  : 종료  0: 실행
+	int exit_status;   					//0  : 정상 -1: error
+	int load_status;   					//0  : 정상 -1: error
+	struct list child_list;				/* Forked child list */
+	struct list_elem child_elem;		/* List element of child_list */
+	struct thread * parent;				/* Parent thread of this thread */
     
-	struct semaphore exit_sema;
-	struct semaphore load_sema;
+	struct semaphore exit_sema;			/* Whether this thread is exited */
+	struct semaphore load_sema;			/* Whether this thread is loaded */
 
-	struct file* fd_table [30];
-	int num_of_fd;
+	struct file* fd_table [30];			/* File descriptor table of this process */
+	int num_of_fd;						/* The number of file descriptors in fd_table */
 
 #endif
 #ifdef VM

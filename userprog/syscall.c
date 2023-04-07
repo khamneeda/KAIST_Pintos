@@ -9,6 +9,7 @@
 #include "intrinsic.h"
 #include "filesys/filesys.h"
 #include "filesys/inode.c"
+#include "filesys/file.c"
 
 #include "include/lib/string.h"
 
@@ -266,14 +267,40 @@ int64_t
 sys_read (uint64_t* args) {
 
 	int fd = (int) args[1];
-	void* buffer = (void*) args[2];
+	uint8_t* buffer = (uint8_t*) args[2]; // 얘 init 안해줘도 되나
 	unsigned size = (unsigned) args[3];
+	int read_byte = 0;
+	uint8_t key;
 
+	if (buffer >= KERN_BASE) sys_exit(-1); // Or return -1? Or put it in default
+
+	switch (fd){
+		case 0:
+			key = input_getc();
+			buffer[read_byte] = key;
+			read_byte++;
+			while ((read_byte < size) && (!buffer_empty())){ 
+				key = input_getc();
+				buffer[read_byte] = key;
+				read_byte++;
+			}
+
+		case 1:
+			return (int64_t) -1;
+
+		default:
+			struct file* file = get_file(fd);
+			if (file == NULL) return -1;
+			lock_acquire(&file->inode->rw_lock);
+			read_byte = file_read(file, buffer, size);
+			lock_release(&file->inode->rw_lock);
+			return read_byte;
+	}
 
 	/*
 	현재 읽는 위치가 파일 끝 이후면 0바이트 읽음
 
-	buffer의 주소 userland 확인
+	buffer의 주소 userland 확인 왜?
 	fd switch
 	case 0 input_getc()이용
 	case 1 return -1;
@@ -282,8 +309,7 @@ sys_read (uint64_t* args) {
 		file != 0 확인
 		size만큼 read_byte = file_read(file*, buffer, size)
 		read_byte return
-	1. 
-	
+	1. read write lock은 어떻게 설정?
 	*/
 
 
@@ -295,6 +321,8 @@ sys_write (uint64_t* args) {
 	int fd = (int) args[1];
 	const void * buffer = (const void *) args[2];
 	unsigned size = (unsigned) args[3];
+
+
 
 	//	현재 읽는 위치가 파일 끝 이후면 에러
 	/*
@@ -311,7 +339,6 @@ sys_write (uint64_t* args) {
 	strlcpy(temp, buffer,size);
 	printf("%s\n",temp);*/
 	return 1;
-	putbuf()
 }
 
 void
@@ -336,6 +363,7 @@ sys_close (uint64_t* args) {
 	file_close(file);
 }
 
+/* Get file pointer searching in the current threads fd_table */
 struct file*
 get_file(int fd){
 	ASSERT (thread_current()->num_of_fd != 30);

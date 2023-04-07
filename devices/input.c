@@ -46,3 +46,8 @@ input_full (void) {
 	ASSERT (intr_get_level () == INTR_OFF);
 	return intq_full (&buffer);
 }
+
+bool
+buffer_empty(void){
+	return intq_empty(&buffer);
+}

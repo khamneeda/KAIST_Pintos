@@ -287,7 +287,7 @@ sys_read (uint64_t* args) {
 	int read_byte = 0;
 	uint8_t key;
 
-	if (buffer >= KERN_BASE) sys_exit(-1); // Or return -1? Or put it in default
+	if (buffer >= KERN_BASE) sys_exit_num(-1); // Or return -1? Or put it in default
 
 	struct file* file;
 	switch (fd){
@@ -352,7 +352,7 @@ sys_write (uint64_t* args) {
 	
 	// */
 	int write_byte=0;
-	if(!check_address(buffer)) {process_exit();}
+	if (buffer >= KERN_BASE) sys_exit_num(-1); 
 
 	struct file* file;
 	long rest;

@@ -2,6 +2,8 @@
 #define FILESYS_FILE_H
 
 #include "filesys/off_t.h"
+#include <stdbool.h>
+
 
 /* An open file. */
 struct file {
@@ -33,5 +35,8 @@ void file_allow_write (struct file *);
 void file_seek (struct file *, off_t);
 off_t file_tell (struct file *);
 off_t file_length (struct file *);
+
+
+struct lock * file_rw_lock (struct file *);
 
 #endif /* filesys/file.h */

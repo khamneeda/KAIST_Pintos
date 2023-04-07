@@ -8,7 +8,7 @@
 #include "filesys/directory.h"
 #include "devices/disk.h"
 ////////////////
-#include "filesys/directory.c"
+
 /* The disk that contains the file system. */
 struct disk *filesys_disk;
 
@@ -122,21 +122,11 @@ do_format (void) {
 	printf ("done.\n");
 }
 
-
-struct inode* get_inode(const char* name){
+bool
+is_open_file_set_semoved (const char *name) {
 	struct dir *dir = dir_open_root ();
-	if(dir != NULL) return NULL;
-	struct dir_entry e;
-	struct inode *inode = NULL;
-	bool success = false;
-	off_t ofs;
-	ASSERT (dir != NULL);
-	ASSERT (name != NULL);
-	/* Find directory entry. */
-	lookup (dir, name, &e, &ofs);
-	/* Open inode. */
-	inode = inode_open (e.inode_sector);
-	inode_close (inode);
+	bool success = dir != NULL && dir_test_inode_is_open (dir, name);
 	dir_close (dir);
-	return inode;
+
+	return success;
 }

@@ -17,6 +17,7 @@ bool filesys_create (const char *name, off_t initial_size);
 struct file *filesys_open (const char *name);
 bool filesys_remove (const char *name);
 
-struct inode* get_inode(const char* name);
+
+bool is_open_file_set_semoved (const char *name);
 
 #endif /* filesys/filesys.h */

@@ -2,6 +2,7 @@
 #include <debug.h>
 #include "filesys/inode.h"
 #include "threads/malloc.h"
+///
 #include "threads/synch.h"
       
 
@@ -154,4 +155,10 @@ off_t
 file_tell (struct file *file) {
 	ASSERT (file != NULL);
 	return file->pos;
+}
+
+/* get addr of inode's rw_lock */
+struct lock *
+file_rw_lock (struct file *file) {
+	return inode_rw_lock (file->inode);
 }

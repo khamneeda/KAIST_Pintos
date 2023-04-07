@@ -234,7 +234,8 @@ sys_remove (uint64_t* args) {
 	// if (target_inode->open_cnt != 0) return (int64_t) true;
 
 	// Free memory
-	bool success = filesys_remove (name);
+	if(is_open_file_set_semoved(name)){return (int64_t) true;} //file이 열려있어서 file->inode->removed 세팅까지 해줌 안열려있거나 오류있으면 아무것도 안함 
+	bool success = filesys_remove (name); //if문 
 	return (int64_t) success;
 }
 
@@ -303,9 +304,9 @@ sys_read (uint64_t* args) {
 		default:
 			file = get_file(fd);
 			if (file == NULL) return -1;
-			lock_acquire(&file->inode->rw_lock);
+			lock_acquire(file_rw_lock(file));
 			read_byte = file_read(file, buffer, size);
-			lock_release(&file->inode->rw_lock);
+			lock_release(file_rw_lock(file));
 			return (int64_t) read_byte;
 	}
 
@@ -369,9 +370,9 @@ sys_write (uint64_t* args) {
 			file = get_file(fd);
 			if (file == NULL) 
 				return (int64_t) 0;
-			lock_acquire(&file->inode->rw_lock);
+			lock_acquire(file_rw_lock(file));
 			write_byte = file_write(file, buffer, size);
-			lock_release(&file->inode->rw_lock);
+			lock_release(file_rw_lock(file));
 			ASSERT(write_byte >= 0);
 			return (int64_t) write_byte;
 	}

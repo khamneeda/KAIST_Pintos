@@ -351,16 +351,16 @@ sys_write (uint64_t* args) {
 	if(!check_address(buffer)) {process_exit();}
 
 	struct file* file;
-	unsigned long rest;
+	long rest;
 	switch (fd){
 		case 0:
 			return (int64_t) 0;
 
 		case 1:
-			rest = (unsigned long) size; 
+			rest = (long) size; 
 			unsigned long temp_size;
 			temp_size = 100;
-			while(rest>=0){
+			while(rest>0){
 			temp_size= rest<temp_size? rest :temp_size;
 			putbuf (buffer, temp_size);
 			rest=rest-100;

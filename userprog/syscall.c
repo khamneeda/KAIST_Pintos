@@ -201,17 +201,24 @@ sys_exit (uint64_t* args) {
 
 int64_t
 sys_fork (uint64_t* args){
-	return 0;
+    const char *thread_name = (const char *) args[1];
+	int tid = process_fork (thread_name, &thread_current()->tf);
+	return tid;
 }
 
 int64_t
 sys_exec (uint64_t* args) {
-	return 0;
+	const char *file= (const char *) args[1];
+	process_exec((void *)file);
+	return -1;
 }
 
 int64_t
 sys_wait (uint64_t* args) {
-	return 0;
+	int pid = (int) args[1];
+
+	int child_exit_status = process_wait (pid);
+	return child_exit_status;
 }
 
 int64_t

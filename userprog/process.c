@@ -93,8 +93,11 @@ initd (void *f_name) {
 tid_t
 process_fork (const char *name, struct intr_frame *if_ ) {
 	/* Clone current thread to new thread.*/
+	void * temp_array[2];
+	temp_array[0] = thread_current();
+	temp_array[1] = if_; 
 	return thread_create (name,
-			PRI_DEFAULT, __do_fork, thread_current ());
+			PRI_DEFAULT, __do_fork, temp_array);
 }
 
 #ifndef VM
@@ -115,7 +118,7 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
 
 	/* 3. TODO: Allocate new PAL_USER page for the child and set result to
 	 *    TODO: NEWPAGE. */
-
+    
 	/* 4. TODO: Duplicate parent's page to the new page and
 	 *    TODO: check whether parent's page is writable or not (set WRITABLE
 	 *    TODO: according to the result). */
@@ -134,10 +137,11 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
  *       That is, you are required to pass second argument of process_fork to
  *       this function. */
 static void
-__do_fork (void *aux) {
+__do_fork (void ** aux) {
 	struct intr_frame if_;
-	struct thread *parent = (struct thread *) aux;
+	struct thread *parent = (struct thread *) aux[0];
 	struct thread *current = thread_current ();
+	struct thread *fork_if_ = (struct intr_frame *) aux[1];
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
 	struct intr_frame *parent_if;
 	bool succ = true;

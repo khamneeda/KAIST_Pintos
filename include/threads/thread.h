@@ -119,6 +119,7 @@ struct thread {
     
 	struct semaphore exit_sema;			/* Whether this thread is exited */
 	struct semaphore load_sema;			/* Whether this thread is loaded */
+	struct semaphore fork_sema;			/* Whether its child's cloning is finished */
 
 	struct file* fd_table [30];			/* File descriptor table of this process */
 	int num_of_fd;						/* The number of file descriptors in fd_table */

@@ -227,7 +227,7 @@ thread_create (const char *name, int priority,
 	#ifdef USERPROG
 	sema_init(&t->exit_sema, 0);
 	sema_init(&t->load_sema, 0);
-
+	sema_init(&t->fork_sema, 0);
 
 
 	#endif

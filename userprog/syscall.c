@@ -97,6 +97,7 @@ syscall_handler (struct intr_frame *f) {
 			sys_exit(args);
 			break;		
 		case SYS_FORK:
+			args[2]=(uint64_t) f;
 			update = sys_fork(args);
 			f->R.rax = update; 
 			break;		
@@ -202,7 +203,8 @@ sys_exit (uint64_t* args) {
 int64_t
 sys_fork (uint64_t* args){
     const char *thread_name = (const char *) args[1];
-	int tid = process_fork (thread_name, &thread_current()->tf);
+	struct intr_frame *f = (struct intr_frame *) args[2];
+	int tid = process_fork (thread_name, f);
 	return tid;
 }
 

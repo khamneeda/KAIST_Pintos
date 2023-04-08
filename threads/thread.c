@@ -248,7 +248,7 @@ thread_create (const char *name, int priority,
 	//thread_unblock (t);
 	ASSERT (t->status == THREAD_BLOCKED);
 	dis_intr_treason (t);
-	return tid;
+	return t->tid;
 }
 
 /* Puts the current thread to sleep.  It will not be scheduled

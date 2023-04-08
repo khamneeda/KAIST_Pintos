@@ -394,6 +394,7 @@ sys_close (uint64_t* args) {
 	if(fd<2||fd>=30){sys_exit_num(-1);}
 	struct file* file = get_file(fd);
 	if(file==NULL){sys_exit_num(-1);}
+	thread_current()->fd_table[fd]=NULL;
 	file_close(file);
 }
 

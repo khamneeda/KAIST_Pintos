@@ -66,8 +66,7 @@ void
 syscall_handler (struct intr_frame *f) {
 	// TODO: Your implementation goes here.
 	if(!check_address(f->rsp)){
-		printf("not\n");
-		//exit(-1);
+		sys_exit_num(-1);
 	}
 
 	/* Get arguments */
@@ -257,15 +256,7 @@ sys_open (uint64_t* args) {
     if (open_file == NULL) return -1;
     curr->fd_table[curr->num_of_fd] = open_file;
     curr->num_of_fd++;
-
-    // /*
-    // ASSERT(thread->num_of_fd != 30);
-    // 1. fd_table에 추가, num_of_fd++
-    // // inode->cnt는 알아서 이미 올라감
-    // 3. fd 반환
-    // */
-
-    return curr->num_of_fd;
+    return curr->num_of_fd-1;
 }
 
 int64_t
@@ -400,7 +391,9 @@ sys_tell (uint64_t* args) {
 void
 sys_close (uint64_t* args) {
 	int fd = (int) args[1];
+	if(fd<2||fd>=30){sys_exit_num(-1);}
 	struct file* file = get_file(fd);
+	if(file==NULL){sys_exit_num(-1);}
 	file_close(file);
 }
 

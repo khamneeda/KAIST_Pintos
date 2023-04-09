@@ -261,7 +261,7 @@ int64_t
 sys_open (uint64_t* args) {
     const char* name = (const char *) args[1];
     struct thread* curr = thread_current();
-    ASSERT(curr->num_of_fd != 30); // If error, increase the number of entry in thread.h
+    ASSERT(curr->num_of_fd != FD_TABLE_SIZE); // If error, increase the number of entry in thread.h
     if(!check_address(name)) sys_exit_num(-1);
     struct file * open_file = filesys_open (name);
     if (open_file == NULL) return -1;
@@ -292,7 +292,7 @@ sys_read (uint64_t* args) {
 	if (!check_address(buffer)) sys_exit_num(-1); // Or return -1? Or put it in default
 
 	struct file* file;
-	if(fd<0||fd>=30){sys_exit_num(-1);}
+	if(fd<0||fd>=FD_TABLE_SIZE){sys_exit_num(-1);}
 	switch (fd){
 		case 0:
 			key = input_getc();
@@ -356,7 +356,7 @@ sys_write (uint64_t* args) {
 	// */
 	int write_byte=0;
 	if (!check_address(buffer)) sys_exit_num(-1);
-	if(fd<0||fd>=30){sys_exit_num(-1);}
+	if(fd<0||fd>=FD_TABLE_SIZE){sys_exit_num(-1);}
 	
 	struct file* file;
 	long rest;
@@ -404,7 +404,7 @@ sys_tell (uint64_t* args) {
 void
 sys_close (uint64_t* args) {
 	int fd = (int) args[1];
-	if(fd<2||fd>=30){sys_exit_num(-1);}
+	if(fd<2||fd>=FD_TABLE_SIZE){sys_exit_num(-1);}
 	struct file* file = get_file(fd);
 	if(file==NULL){sys_exit_num(-1);}
 	thread_current()->fd_table[fd]=NULL;
@@ -414,7 +414,7 @@ sys_close (uint64_t* args) {
 /* Get file pointer searching in the current threads fd_table */
 struct file*
 get_file(int fd){
-	ASSERT (thread_current()->num_of_fd != 30);
+	ASSERT (thread_current()->num_of_fd != FD_TABLE_SIZE);
 	struct file* file = thread_current()->fd_table[fd];
 	return file;
 }

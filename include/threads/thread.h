@@ -124,6 +124,8 @@ struct thread {
 	struct file* fd_table [30];			/* File descriptor table of this process */
 	int num_of_fd;						/* The number of file descriptors in fd_table */
 
+	bool is_process_msg;				/* true: msg, false: no msg */
+
 #endif
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */

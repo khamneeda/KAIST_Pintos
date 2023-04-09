@@ -163,6 +163,7 @@ __do_fork (void ** aux) {
 	/* TODO: somehow pass the parent_if. (i.e. process_fork()'s if_) */
 	struct intr_frame *parent_if  = (struct intr_frame *) aux[1]; 
 	bool succ = true;
+	curr->is_process_msg = true;
 
 	/* 1. Read the cpu context to local stack. */
 	memcpy (&if_, parent_if, sizeof (struct intr_frame));
@@ -218,6 +219,7 @@ process_exec (void *f_name) {
 	char file_name[100];
 	strlcpy(file_name, f_name, 100);
 	bool success;
+	thread_current()->is_process_msg = true;
 
 
 	/* We cannot use the intr_frame in the thread structure.
@@ -341,7 +343,8 @@ process_exit (void) {
 	//print exit
 	curr->is_exit=1;
 	process_cleanup ();
-	printf("%s: exit(%d)\n", curr->name, curr->exit_status);
+	if (thread_current()->is_process_msg)
+		printf("%s: exit(%d)\n", curr->name, curr->exit_status);
 	sema_up(&curr->exit_sema);
 }
 

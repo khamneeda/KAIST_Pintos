@@ -612,6 +612,8 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->exit_status=-1;
 	t->load_status=-1;
 	list_init(&t->child_list);
+	t->is_process_msg = false;
+
 
 	//사람있어요!!!
 	memset(t->fd_table, 0, 30*sizeof(struct file*));

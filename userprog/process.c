@@ -214,7 +214,8 @@ error:
 /* 여기에서 fork와 wait을 모두 해 줌*/
 int
 process_exec (void *f_name) {
-	char *file_name = f_name;
+	char file_name[100];
+	strlcpy(file_name, f_name, 100);
 	bool success;
 
 	/* We cannot use the intr_frame in the thread structure.
@@ -225,14 +226,19 @@ process_exec (void *f_name) {
 	_if.cs = SEL_UCSEG;
 	_if.eflags = FLAG_IF | FLAG_MBS;
 
+	void* temp_page = palloc_get_page(PAL_ZERO);
+	memcpy(temp_page, file_name, 100);
+
 	/* We first kill the current context */
 	process_cleanup ();
 
 	/* And then load the binary */
+	memcpy(file_name, temp_page, 100);
 	success = load (file_name, &_if);
 
 	/* If load failed, quit. */
-	palloc_free_page (file_name);
+	palloc_free_page(temp_page);
+	//palloc_free_page (file_name);
 	if (!success)
 		return -1;
 

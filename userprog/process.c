@@ -100,17 +100,12 @@ process_fork (const char *name, struct intr_frame *if_ ) {
 	temp_array[0] = thread_current();
 	temp_array[1] = if_; 
 	tid_t child_tid = thread_create (name, PRI_DEFAULT, __do_fork, temp_array);
-	if (child_tid != thread_current()->tid){ // if curr == parent
 		struct thread* child = get_thread(child_tid);
 		list_push_back(&thread_current()->child_list, &child->child_elem);
 		sema_down(&child->fork_sema);
 		return child_tid;
-	}
-	else{
-		return 0;
-	}
 
-	}
+}
 
 #ifndef VM
 /* Duplicate the parent's address space by passing this function to the

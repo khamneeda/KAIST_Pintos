@@ -211,6 +211,7 @@ sys_fork (uint64_t* args){
 int64_t
 sys_exec (uint64_t* args) {
 	const char *file= (const char *) args[1];
+	if(!check_address(file)){ sys_exit_num(-1); }
 	int ret = process_exec((void *)file);
 	if (ret == -1) sys_exit_num(-1);
 	return -1;

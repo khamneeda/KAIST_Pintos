@@ -292,7 +292,7 @@ sys_read (uint64_t* args) {
 	if (!check_address(buffer)) sys_exit_num(-1); // Or return -1? Or put it in default
 
 	struct file* file;
-	if(fd<0||fd>=FD_TABLE_SIZE){sys_exit_num(-1);}
+	if(fd<0||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
 	switch (fd){
 		case 0:
 			key = input_getc();
@@ -356,7 +356,7 @@ sys_write (uint64_t* args) {
 	// */
 	int write_byte=0;
 	if (!check_address(buffer)) sys_exit_num(-1);
-	if(fd<0||fd>=FD_TABLE_SIZE){sys_exit_num(-1);}
+	if(fd<0||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
 	
 	struct file* file;
 	long rest;
@@ -404,7 +404,7 @@ sys_tell (uint64_t* args) {
 void
 sys_close (uint64_t* args) {
 	int fd = (int) args[1];
-	if(fd<2||fd>=FD_TABLE_SIZE){sys_exit_num(-1);}
+	if(fd<2||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
 	struct file* file = get_file(fd);
 	if(file==NULL){sys_exit_num(-1);}
 	thread_current()->fd_table[fd]=NULL;

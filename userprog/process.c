@@ -193,7 +193,7 @@ __do_fork (void ** aux) {
 	curr->parent = parent;
 	//curr->tf=if_;
 
-	for (int i = 0; i < FD_TABLE_SIZE; i++){
+	for (int i = 0; i < parent->num_of_fd; i++){
 		if (parent->fd_table[i])
 			curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
 	}

@@ -219,6 +219,7 @@ process_exec (void *f_name) {
 	strlcpy(file_name, f_name, 100);
 	bool success;
 
+
 	/* We cannot use the intr_frame in the thread structure.
 	 * This is because when current thread rescheduled,
 	 * it stores the execution information to the member. */
@@ -515,6 +516,7 @@ load (const char *file_name, struct intr_frame *if_) {
 		printf ("load: %s: open failed\n", name_of_file);
 		goto done;
 	}
+	file_deny_write(file);
 
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
@@ -625,6 +627,7 @@ load (const char *file_name, struct intr_frame *if_) {
 //strlen(file_name);
 	success = true;
 
+	file_allow_write(file);
 done:
 	/* We arrive here whether the load is successful or not. */
 	file_close (file);

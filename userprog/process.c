@@ -125,7 +125,7 @@ duplicate_pte (uint64_t *pte, void *va, void *aux) {
 
 	/* 1. TODO: If the parent_page is kernel page, then return immediately. */
 
-	if (is_kernel_vaddr(parent)) return false;
+	if (is_kernel_vaddr(va)) return true;
 
 	/* 2. Resolve VA from the parent's page map level 4. */
 	parent_page = pml4_get_page (parent->pml4, va);
@@ -171,6 +171,7 @@ __do_fork (void ** aux) {
 
 	/* 1. Read the cpu context to local stack. */
 	memcpy (&if_, parent_if, sizeof (struct intr_frame));
+	if_.R.rax=0;
 
 	/* 2. Duplicate PT */
 	curr->pml4 = pml4_create();
@@ -194,14 +195,7 @@ __do_fork (void ** aux) {
 	 * TODO:       the resources of parent.*/
 
 	curr->parent = parent;
-
-	curr->tf.R.rbx = parent->tf.R.rbx;
-	curr->tf.rsp = parent->tf.rsp;
-	curr->tf.R.rbp = parent->tf.R.rbp;
-	curr->tf.R.r12 = parent->tf.R.r12;
-	curr->tf.R.r13 = parent->tf.R.r13;
-	curr->tf.R.r14 = parent->tf.R.r14;
-	curr->tf.R.r15 = parent->tf.R.r15;
+	//curr->tf=if_;
 
 	for (int i = 0; i < 30; i++){
 		if (parent->fd_table[i])
@@ -318,7 +312,7 @@ done:
 	struct thread* curr = thread_current();
 	if(!list_empty(&curr->child_list)){
 		struct thread* target_child= list_entry(list_front(&curr->child_list), struct thread, child_elem);
-		while (&target_child->tid != child_tid){
+		while (target_child->tid != child_tid){
 			if (&target_child->child_elem == list_end(&curr->child_list) ){
 				intr_set_level (old_level);
 				return -1;		

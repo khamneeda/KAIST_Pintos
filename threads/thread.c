@@ -365,7 +365,7 @@ get_thread(tid_t tid){
 		struct thread* t = list_entry(c,struct thread, total_list_elem);
 		if (t->tid == tid) return t;
 	}
-	ASSERT(1 == 2);
+	return NULL;
 }
 
 /* Returns the running thread's tid. */

@@ -195,6 +195,14 @@ __do_fork (void ** aux) {
 
 	curr->parent = parent;
 
+	curr->tf.R.rbx = parent->tf.R.rbx;
+	curr->tf.rsp = parent->tf.rsp;
+	curr->tf.R.rbp = parent->tf.R.rbp;
+	curr->tf.R.r12 = parent->tf.R.r12;
+	curr->tf.R.r13 = parent->tf.R.r13;
+	curr->tf.R.r14 = parent->tf.R.r14;
+	curr->tf.R.r15 = parent->tf.R.r15;
+
 	for (int i = 0; i < 30; i++){
 		if (parent->fd_table[i])
 			curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
@@ -286,6 +294,7 @@ process_wait (tid_t child_tid) {
 	struct thread* child = get_thread(child_tid);
 	//child->status = THREAD_READY;
 	//thread_push_ready_list(child);
+	if (child == NULL) goto done;
 
 	intr_set_level(old_level);
 
@@ -301,6 +310,8 @@ process_wait (tid_t child_tid) {
 	1. exit, kill 후 바로 sema_up 해주기
 	2. 이 함수에서 sema_down이후로 intr_disable()
 	*/
+
+done:
 
 	old_level = intr_disable ();
 

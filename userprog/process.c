@@ -627,7 +627,6 @@ load (const char *file_name, struct intr_frame *if_) {
 //strlen(file_name);
 	success = true;
 
-	file_allow_write(file);
 done:
 	/* We arrive here whether the load is successful or not. */
 	file_close (file);

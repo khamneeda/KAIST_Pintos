@@ -196,6 +196,7 @@ __do_fork (void ** aux) {
 		if (parent->fd_table[i])
 			curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
 	}
+	curr->num_of_fd = parent->num_of_fd;
 
 	process_init ();
 

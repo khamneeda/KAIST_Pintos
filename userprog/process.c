@@ -354,6 +354,11 @@ process_exit (void) {
 		c = c->next;
 		sema_up(&t->exit_sema);
 	}}
+	for (int i = 0; i < curr->num_of_fd; i++){
+		if (curr->fd_table[i])
+			file_close(curr->fd_table[i]);
+	}
+	
 	if (curr->is_process_msg)
 		printf("%s: exit(%d)\n", curr->name, curr->exit_status);
 	sema_up(&curr->wait_sema);
@@ -531,7 +536,7 @@ load (const char *file_name, struct intr_frame *if_) {
 		printf ("load: %s: open failed\n", name_of_file);
 		goto done;
 	}
-	file_deny_write(file);
+	//file_deny_write(file);
 
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr

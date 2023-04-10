@@ -261,10 +261,12 @@ int64_t
 sys_open (uint64_t* args) {
     const char* name = (const char *) args[1];
     struct thread* curr = thread_current();
+
     ASSERT(curr->num_of_fd != FD_TABLE_SIZE); // If error, increase the number of entry in thread.h
     if(!check_address(name)) sys_exit_num(-1);
     struct file * open_file = filesys_open (name);
     if (open_file == NULL) return -1;
+	if(!strcmp(name,curr->name)){file_deny_write(open_file);}
     curr->fd_table[curr->num_of_fd] = open_file;
     curr->num_of_fd++;
     return curr->num_of_fd-1;

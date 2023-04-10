@@ -358,8 +358,8 @@ process_exit (void) {
 	for (int i = 2; i < curr->num_of_fd; i++){
 		if (curr->fd_table[i])
 			file_close(curr->fd_table[i]);
-			curr->fd_table[i]=NULL;
 	}
+	free((void *)curr->fd_table);
 	
 	if (curr->is_process_msg)
 		printf("%s: exit(%d)\n", curr->name, curr->exit_status);

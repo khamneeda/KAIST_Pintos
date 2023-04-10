@@ -123,7 +123,8 @@ struct thread {
 	struct semaphore load_sema;			/* Whether this thread is loaded */
 	struct semaphore fork_sema;			/* Whether its child's cloning is finished */
 
-	struct file* fd_table [FD_TABLE_SIZE];			/* File descriptor table of this process */
+//struct file* fd_table [FD_TABLE_SIZE];			/* File descriptor table of this process */
+	struct file** fd_table; 
 	int num_of_fd;						/* The number of file descriptors in fd_table */
 
 	bool is_process_msg;				/* true: msg, false: no msg */

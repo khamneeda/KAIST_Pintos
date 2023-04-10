@@ -209,6 +209,7 @@ tid_t
 thread_create (const char *name, int priority,
 		thread_func *function, void *aux) {
 	struct thread *t;
+	struct file ** fd_table_page;
 	tid_t tid;
 
 	ASSERT (function != NULL);
@@ -222,6 +223,7 @@ thread_create (const char *name, int priority,
 	init_thread (t, name, priority);
 	//t->priority_origin=priority; init_thread에 넣음
 	tid = t->tid = allocate_tid ();
+
 	if (name != "idle")	list_push_back(&total_list,&t->total_list_elem);
 
 	#ifdef USERPROG
@@ -229,7 +231,10 @@ thread_create (const char *name, int priority,
 	sema_init(&t->wait_sema, 0);
 	sema_init(&t->load_sema, 0);
 	sema_init(&t->fork_sema, 0);
-
+ 	fd_table_page = palloc_get_page (PAL_ZERO);
+	if (fd_table_page == NULL)
+		return TID_ERROR;
+	t->fd_table= fd_table_page;
 
 	#endif
 
@@ -616,7 +621,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 
 
 	//사람있어요!!!
-	memset(t->fd_table, 0, FD_TABLE_SIZE*sizeof(struct file*));
+	//memset(t->fd_table, 0, PGSIZE);
 	// t->fd_table = {0, }; // Memory allocation?
 	t->num_of_fd = 2;
 

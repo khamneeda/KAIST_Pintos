@@ -261,7 +261,7 @@ sys_open (uint64_t* args) {
     const char* name = (const char *) args[1];
     struct thread* curr = thread_current();
 
-    ASSERT(curr->num_of_fd != FD_TABLE_SIZE); // If error, increase the number of entry in thread.h
+    //ASSERT(curr->num_of_fd != FD_TABLE_SIZE); // If error, increase the number of entry in thread.h
     if(!check_address(name)) sys_exit_num(-1);
     //open하면 안됨, inode 이미 있는 경우에는 ㅇㅇ
 	//기존에 있는 파일 가져와야함

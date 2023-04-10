@@ -226,6 +226,7 @@ thread_create (const char *name, int priority,
 
 	#ifdef USERPROG
 	sema_init(&t->exit_sema, 0);
+	sema_init(&t->wait_sema, 0);
 	sema_init(&t->load_sema, 0);
 	sema_init(&t->fork_sema, 0);
 
@@ -387,7 +388,6 @@ thread_exit (void) {
 	/* Just set our status to dying and schedule another process.
 	   We will be destroyed during the call to schedule_tail(). */
 	intr_disable ();
-	list_remove(&thread_current()->total_list_elem);//idle??
 	do_schedule (THREAD_DYING);
 	NOT_REACHED ();
 }
@@ -781,6 +781,8 @@ schedule (void) {
 		if (curr && curr->status == THREAD_DYING && curr != initial_thread) {
 			ASSERT (curr != next);
 			list_push_back (&destruction_req, &curr->elem);
+			list_remove(&curr->total_list_elem);
+
 		}
 
 		/* Before switching the thread, we first save the information

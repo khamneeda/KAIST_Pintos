@@ -298,7 +298,7 @@ process_wait (tid_t child_tid) {
 	intr_set_level(old_level);
 
 	//sema_down이 알아서 curr BLOCK으로 바꿔서 waiters에 넣어줌
-	thread_sema_down(&child->exit_sema);//부모가 아니라 자식의 sema여야함 -> 자식세마 웨이터에 부모넣기
+	thread_sema_down(&child->wait_sema);//부모가 아니라 자식의 sema여야함 -> 자식세마 웨이터에 부모넣기
 
 
 	//pop child in child_list in parent
@@ -345,7 +345,7 @@ process_exit (void) {
 	process_cleanup ();
 	if (thread_current()->is_process_msg)
 		printf("%s: exit(%d)\n", curr->name, curr->exit_status);
-	sema_up(&curr->exit_sema);
+	sema_up(&curr->wait_sema);
 }
 
 /* Free the current process's resources. */

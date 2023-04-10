@@ -586,6 +586,9 @@ load (const char *file_name, struct intr_frame *if_) {
 		}
 	}
 
+	file_deny_write(file);
+
+
 	/* Set up stack. */
 	if (!setup_stack (if_))
 		goto done;

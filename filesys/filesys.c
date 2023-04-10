@@ -90,6 +90,18 @@ filesys_open (const char *name) {
 	return file_open (inode);
 }
 
+struct file*
+filesys_get_file(const char* name){
+	struct inode* inode = dir_return_inode(name);
+	if (inode == NULL) return NULL;
+	inode_reopen(inode);
+	return file_open(inode);
+}
+
+
+
+
+
 /* Deletes the file named NAME.
  * Returns true if successful, false on failure.
  * Fails if no file named NAME exists,

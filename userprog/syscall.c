@@ -263,7 +263,15 @@ sys_open (uint64_t* args) {
     struct thread* curr = thread_current();
     ASSERT(curr->num_of_fd != FD_TABLE_SIZE); // If error, increase the number of entry in thread.h
     if(!check_address(name)) sys_exit_num(-1);
-    struct file * open_file = filesys_open (name);
+    //open하면 안됨, inode 이미 있는 경우에는 ㅇㅇ
+	//기존에 있는 파일 가져와야함
+	// struct file * open_file = filesys_get_file(name);
+	// if (open_file == NULL){
+	// 	open_file = filesys_open(name);
+	// 	file_deny_write(file);
+	// }
+
+	struct file* open_file = filesys_open(name);
     if (open_file == NULL) return -1;
     curr->fd_table[curr->num_of_fd] = open_file;
     curr->num_of_fd++;

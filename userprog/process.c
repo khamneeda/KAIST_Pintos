@@ -293,9 +293,11 @@ process_wait (tid_t child_tid) {
 	struct thread* child = get_thread(child_tid);
 	//child->status = THREAD_READY;
 	//thread_push_ready_list(child);
-	if (child == NULL) goto done;
+	if (child -> parent != thread_current()){ return -1;}
+	if (child -> is_exit ) goto done;
 
 	intr_set_level(old_level);
+
 
 	//sema_down이 알아서 curr BLOCK으로 바꿔서 waiters에 넣어줌
 	thread_sema_down(&child->wait_sema);//부모가 아니라 자식의 sema여야함 -> 자식세마 웨이터에 부모넣기
@@ -324,9 +326,12 @@ done:
 			}
 			target_child=list_entry(list_next(&target_child->child_elem), struct thread, child_elem);
 		}
+		int exit_status=target_child->exit_status;
 		list_remove(&target_child->child_elem);
+		sema_up(&target_child->exit_sema);
 		intr_set_level (old_level);
-		return target_child->exit_status;
+		
+		return exit_status;
 	}
 	intr_set_level (old_level);
 	return -1;
@@ -343,9 +348,16 @@ process_exit (void) {
 	//print exit
 	curr->is_exit=1;
 	process_cleanup ();
-	if (thread_current()->is_process_msg)
+	if(!list_empty(&curr->child_list)){
+	for (struct list_elem* c = list_front(&curr->child_list); c != list_end(&curr->child_list); ){
+		struct thread* t = list_entry(c,struct thread, child_elem);
+		c = c->next;
+		sema_up(&t->exit_sema);
+	}}
+	if (curr->is_process_msg)
 		printf("%s: exit(%d)\n", curr->name, curr->exit_status);
 	sema_up(&curr->wait_sema);
+	if(curr->parent) sema_down(&curr->exit_sema);
 }
 
 /* Free the current process's resources. */

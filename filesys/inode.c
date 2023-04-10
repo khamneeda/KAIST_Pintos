@@ -322,20 +322,3 @@ struct lock *
 inode_rw_lock (const struct inode *inode) {
 	return &inode->rw_lock;
 }
-
-/* find open inode. */
-struct inode *
-find_inode_open (disk_sector_t sector) {
-	struct list_elem *e;
-	struct inode *inode;
-
-	/* Check whether this inode is already open. */
-	for (e = list_begin (&open_inodes); e != list_end (&open_inodes);
-			e = list_next (e)) {
-		inode = list_entry (e, struct inode, elem);
-		if (inode->sector == sector) {
-			return inode; 
-		}
-	}
-	return NULL;
-}

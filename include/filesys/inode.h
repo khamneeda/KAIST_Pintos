@@ -21,5 +21,4 @@ void inode_allow_write (struct inode *);
 off_t inode_length (const struct inode *);
 
 struct lock * inode_rw_lock (const struct inode *);
-struct inode * find_inode_open (disk_sector_t);
 #endif /* filesys/inode.h */

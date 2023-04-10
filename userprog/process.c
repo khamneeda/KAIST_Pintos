@@ -354,7 +354,7 @@ process_exit (void) {
 		c = c->next;
 		sema_up(&t->exit_sema);
 	}}
-	for (int i = 0; i < curr->num_of_fd; i++){
+	for (int i = 2; i < curr->num_of_fd; i++){
 		if (curr->fd_table[i])
 			file_close(curr->fd_table[i]);
 	}

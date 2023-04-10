@@ -90,14 +90,6 @@ filesys_open (const char *name) {
 	return file_open (inode);
 }
 
-struct file*
-filesys_get_file(const char* name){
-	struct inode* inode = dir_return_inode(name);
-	if (inode == NULL) return NULL;
-	inode_reopen(inode);
-	return file_open(inode);
-}
-
 
 
 
@@ -132,13 +124,4 @@ do_format (void) {
 #endif
 
 	printf ("done.\n");
-}
-
-bool
-is_open_file_set_semoved (const char *name) {
-	struct dir *dir = dir_open_root ();
-	bool success = dir != NULL && dir_test_inode_is_open (dir, name);
-	dir_close (dir);
-
-	return success;
 }

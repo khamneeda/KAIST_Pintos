@@ -248,7 +248,6 @@ sys_remove (uint64_t* args) {
 	// if (target_inode->open_cnt != 0) return (int64_t) true;
 
 	// Free memory
-	if(is_open_file_set_semoved(name)){return (int64_t) true;} //file이 열려있어서 file->inode->removed 세팅까지 해줌 안열려있거나 오류있으면 아무것도 안함 
 	bool success = filesys_remove (name); //if문 
 	return (int64_t) success;
 }

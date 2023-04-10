@@ -97,21 +97,6 @@ lookup (const struct dir *dir, const char *name,
 	return false;
 }
 
-struct inode*
-dir_return_inode(const char* name){
-	struct dir *dir = dir_open_root ();
-	struct dir_entry e;
-	ASSERT (dir != NULL);
-	ASSERT (name != NULL);
-	if (lookup (dir, name, &e, NULL)){
-		struct inode* inode = find_inode_open (e.inode_sector);
-		return inode;
-	}
-	else return NULL;
-}
-
-
-
 /* Searches DIR for a file with the given NAME
  * and returns true if one exists, false otherwise.
  * On success, sets *INODE to an inode for the file, otherwise to
@@ -230,35 +215,3 @@ dir_readdir (struct dir *dir, char name[NAME_MAX + 1]) {
 	return false;
 }
 
-
-// add not to remove just check it removed.
-
-/* Removes any entry for NAME in DIR.
- * Returns true if successful, false on failure,
- * which occurs only if there is no file with the given NAME. */
-bool
-dir_test_inode_is_open (struct dir *dir, const char *name) {
-	struct dir_entry e;
-	struct inode *inode = NULL;
-	bool success = false;
-	off_t ofs;
-
-	ASSERT (dir != NULL);
-	ASSERT (name != NULL);
-
-	/* Find directory entry. */
-	if (!lookup (dir, name, &e, &ofs))
-		goto done;
-
-	/* Open inode. */
-	inode = find_inode_open (e.inode_sector);
-	if (inode == NULL)
-		goto done;
-
-	/* Remove inode. */
-	inode_remove (inode);
-	success = true;
-
-done:
-	return success;
-}

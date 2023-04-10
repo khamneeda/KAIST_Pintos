@@ -18,7 +18,4 @@ struct file *filesys_open (const char *name);
 struct file* filesys_get_file(const char* name);
 bool filesys_remove (const char *name);
 
-
-bool is_open_file_set_semoved (const char *name);
-
 #endif /* filesys/filesys.h */

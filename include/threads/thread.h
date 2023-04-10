@@ -119,6 +119,7 @@ struct thread {
 	struct thread * parent;				/* Parent thread of this thread */
     
 	struct semaphore exit_sema;			/* Whether this thread is exited */
+	struct semaphore wait_sema;			/* Whether this thread is exited */	
 	struct semaphore load_sema;			/* Whether this thread is loaded */
 	struct semaphore fork_sema;			/* Whether its child's cloning is finished */
 

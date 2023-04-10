@@ -359,7 +359,7 @@ process_exit (void) {
 		if (curr->fd_table[i])
 			file_close(curr->fd_table[i]);
 	}
-	free((void *)curr->fd_table);
+	palloc_free_page((void *)curr->fd_table);
 	
 	if (curr->is_process_msg)
 		printf("%s: exit(%d)\n", curr->name, curr->exit_status);

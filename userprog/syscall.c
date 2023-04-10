@@ -274,7 +274,7 @@ sys_open (uint64_t* args) {
 	struct file* open_file = filesys_open(name);
     if (open_file == NULL) return -1;
 	if(!strcmp(name,curr->name)){file_deny_write(open_file);}
-    curr->fd_table[curr->num_of_fd] = open_file;
+    curr->fd_table[curr->num_of_fd-2] = open_file;
     curr->num_of_fd++;
     return curr->num_of_fd-1;
 }
@@ -282,7 +282,7 @@ sys_open (uint64_t* args) {
 int64_t
 sys_filesize (uint64_t* args) {
 	int fd = (int) args[1];
-	struct file* file = get_file(fd);
+	struct file* file = get_file(fd-2);
 	ASSERT(file != 0);
 	return (int64_t) file_length(file);
 }
@@ -318,7 +318,7 @@ sys_read (uint64_t* args) {
 			return (int64_t) -1;
 
 		default:
-			file = get_file(fd);
+			file = get_file(fd-2);
 			if (file == NULL) return -1;
 			lock_acquire(file_rw_lock(file));
 			read_byte = file_read(file, buffer, size);
@@ -384,7 +384,7 @@ sys_write (uint64_t* args) {
 			}
 			return (int64_t) size;
 		default:
-			file = get_file(fd);
+			file = get_file(fd-2);
 			if (file == NULL) 
 				return (int64_t) 0;
 			lock_acquire(file_rw_lock(file));
@@ -399,14 +399,14 @@ void
 sys_seek (uint64_t* args) {
 	int fd = (int) args[1];
 	unsigned position = (unsigned) args[2];
-	struct file* file = get_file(fd);
+	struct file* file = get_file(fd-2);
 	file_seek(file, position);
 }
 
 int64_t
 sys_tell (uint64_t* args) {
 	int fd = (int) args[1];
-	struct file* file = get_file(fd);
+	struct file* file = get_file(fd-2);
 	return file_tell(file);
 }
 
@@ -414,9 +414,9 @@ void
 sys_close (uint64_t* args) {
 	int fd = (int) args[1];
 	if(fd<2||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
-	struct file* file = get_file(fd);
+	struct file* file = get_file(fd-2);
 	if(file==NULL){sys_exit_num(-1);}
-	thread_current()->fd_table[fd]=NULL;
+	thread_current()->fd_table[fd-2]=NULL;
 	file_close(file);
 }
 

@@ -193,7 +193,7 @@ __do_fork (void ** aux) {
 	curr->parent = parent;
 	//curr->tf=if_;
 
-	for (int i = 0; i < parent->num_of_fd; i++){
+	for (int i = 0; i < parent->num_of_fd-2; i++){
 		if (parent->fd_table[i])
 			curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
 	}
@@ -355,7 +355,7 @@ process_exit (void) {
 		sema_up(&t->exit_sema);
 	}}
 	
-	for (int i = 2; i < curr->num_of_fd; i++){
+	for (int i = 0; i < curr->num_of_fd-2; i++){
 		if (curr->fd_table[i])
 			file_close(curr->fd_table[i]);
 	}

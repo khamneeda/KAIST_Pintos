@@ -29,7 +29,7 @@ typedef int tid_t;
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
-#define FD_TABLE_SIZE 50				/* The number of fd possible in fd_table */
+#define FD_TABLE_SIZE 100				/* The number of fd possible in fd_table */
 
 /* A kernel thread or user process.
  *
@@ -123,7 +123,7 @@ struct thread {
 	struct semaphore load_sema;			/* Whether this thread is loaded */
 	struct semaphore fork_sema;			/* Whether its child's cloning is finished */
 
-	struct file* fd_table [30];			/* File descriptor table of this process */
+	struct file* fd_table [FD_TABLE_SIZE];			/* File descriptor table of this process */
 	int num_of_fd;						/* The number of file descriptors in fd_table */
 
 	bool is_process_msg;				/* true: msg, false: no msg */

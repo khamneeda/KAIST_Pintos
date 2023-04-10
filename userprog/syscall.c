@@ -274,6 +274,13 @@ sys_open (uint64_t* args) {
 	struct file* open_file = filesys_open(name);
     if (open_file == NULL) return -1;
 	if(!strcmp(name,curr->name)){file_deny_write(open_file);}
+
+	for( int i =0 ; i< curr->num_of_fd-2; i++){
+		if(curr->fd_table[i]==NULL){
+			curr->fd_table[i] = open_file;
+			return i+2;
+		}
+	}
     curr->fd_table[curr->num_of_fd-2] = open_file;
     curr->num_of_fd++;
     return curr->num_of_fd-1;
@@ -416,7 +423,9 @@ sys_close (uint64_t* args) {
 	if(fd<2||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
 	struct file* file = get_file(fd-2);
 	if(file==NULL){sys_exit_num(-1);}
-	thread_current()->fd_table[fd-2]=NULL;
+	struct thread *curr=thread_current();
+	curr->fd_table[fd-2]=NULL;
+	if(curr->num_of_fd-1==fd){curr->num_of_fd--;}
 	file_close(file);
 }
 

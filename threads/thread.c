@@ -13,6 +13,7 @@
 #include "intrinsic.h"
 #ifdef USERPROG
 #include "userprog/process.h"
+#include "filesys/file.h"
 #endif
 
 /* Random value for struct thread's `magic' member.
@@ -210,6 +211,8 @@ thread_create (const char *name, int priority,
 		thread_func *function, void *aux) {
 	struct thread *t;
 	struct file ** fd_table_page;
+	struct file *stdin_file;
+	struct file *stdout_file;
 	tid_t tid;
 
 	ASSERT (function != NULL);
@@ -234,7 +237,30 @@ thread_create (const char *name, int priority,
  	fd_table_page = palloc_get_page (PAL_ZERO);
 	if (fd_table_page == NULL)
 		return TID_ERROR;
+	stdin_file = calloc (1, sizeof *stdin_file);
+	if(stdin_file ==NULL){
+		palloc_free_page(fd_table_page);
+		return TID_ERROR;
+	}
+	stdout_file = calloc (1, sizeof *stdout_file);
+	if(stdout_file ==NULL){
+		palloc_free_page(fd_table_page);
+		free(stdin_file);
+		return TID_ERROR;
+	}
 	t->fd_table= fd_table_page;
+	stdin_file->inode=NULL;
+	stdin_file->pos=0;
+	stdin_file->deny_write=false;
+	stdin_file->file_open_cnt=1;
+
+	stdout_file->inode=NULL;
+	stdout_file->pos=1;
+	stdin_file->deny_write= false;
+	stdin_file->file_open_cnt=1;
+
+	t->fd_table[0]=stdin_file;
+	t->fd_table[1]=stdout_file;
 
 	#endif
 

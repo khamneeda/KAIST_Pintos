@@ -10,6 +10,8 @@ struct file {
 	struct inode *inode;        /* File's inode. */
 	off_t pos;                  /* Current position. */
 	bool deny_write;            /* Has file_deny_write() been called? */
+	//bool file_opened;			/* Has this file opened before? */
+	int file_open_cnt; 			/* File opened count: The number of fds point this file */
 };
 
 struct inode;

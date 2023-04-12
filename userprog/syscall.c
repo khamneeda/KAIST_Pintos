@@ -34,6 +34,7 @@ void sys_seek (uint64_t*);
 int64_t sys_tell (uint64_t*);
 void sys_close (uint64_t*);
 struct file* get_file(int);
+int64_t sys_dup2(uint64_t*);
 
 /* System call.
  *
@@ -143,10 +144,11 @@ syscall_handler (struct intr_frame *f) {
 		case SYS_CLOSE:
 			sys_close(args);
 			break;		
+		case SYS_DUP2:
+			update = sys_dup2(args);
+			f->R.rax = update; 
+			break;
 
-		/* For project2 Extra*/		
-		// case SYS_MOUNT
-		// case SYS_UMOUNT
 
 
 		/* For project 3, 4 each
@@ -158,8 +160,9 @@ syscall_handler (struct intr_frame *f) {
 		SYS_READDIR
 		SYS_ISDIR
 		SYS_INUMBER
-		SYS_SYMLINK
-		SYS_DUP2
+		SYS_SYMLINK		
+		SYS_MOUNT
+		SYS_UMOUNT
 		*/
 
 	}
@@ -240,37 +243,16 @@ sys_create (uint64_t* args) {
 int64_t
 sys_remove (uint64_t* args) {
 	const char* name = (const char*) args[1];
-
-	//Update removed state of inode
-	// struct inode* target_inode = get_inode(name);
-	// if (target_inode == NULL) return (int64_t) false;
-	// inode_remove(target_inode);
-	// if (target_inode->open_cnt != 0) return (int64_t) true;
-
-	// Free memory
-	bool success = filesys_remove (name); //if문 
+	bool success = filesys_remove (name); 
 	return (int64_t) success;
 }
 
-/*
-fd를 일단 0,1 빼고 2부터 생성했음
-extra 짤 때, 0부터 생성하고 뒷단에서 +-2 처리해주도록 변경해야
-*/
+
 int64_t
 sys_open (uint64_t* args) {
     const char* name = (const char *) args[1];
     struct thread* curr = thread_current();
-
-    //ASSERT(curr->num_of_fd != FD_TABLE_SIZE); // If error, increase the number of entry in thread.h
     if(!check_address(name)) sys_exit_num(-1);
-    //open하면 안됨, inode 이미 있는 경우에는 ㅇㅇ
-	//기존에 있는 파일 가져와야함
-	// struct file * open_file = filesys_get_file(name);
-	// if (open_file == NULL){
-	// 	open_file = filesys_open(name);
-	// 	file_deny_write(file);
-	// }
-
 	if (curr->num_of_fd == FD_TABLE_SIZE) return -1;
 	struct file* open_file = filesys_open(name);
     if (open_file == NULL) return -1;
@@ -289,8 +271,9 @@ sys_filesize (uint64_t* args) {
 	return (int64_t) file_length(file);
 }
 
-
-// //추후 세마포어 넣기
+/*
+0: stdin / 1: stout
+*/
 int64_t
 sys_read (uint64_t* args) {
 
@@ -327,23 +310,6 @@ sys_read (uint64_t* args) {
 			lock_release(file_rw_lock(file));
 			return (int64_t) read_byte;
 	}
-
-	// /*
-	// 현재 읽는 위치가 파일 끝 이후면 0바이트 읽음
-
-	// buffer의 주소 userland 확인 왜?
-	// fd switch
-	// case 0 input_getc()이용
-	// case 1 return -1;
-	// default
-	// 	file = get_file
-	// 	file != 0 확인
-	// 	size만큼 read_byte = file_read(file*, buffer, size)
-	// 	read_byte return
-	// 1. read write lock은 어떻게 설정?
-	// */
-
-
 	return (int64_t) 0;
 }
 int64_t
@@ -352,19 +318,6 @@ sys_write (uint64_t* args) {
 	const void * buffer = (const void *) args[2];
 	unsigned size = (unsigned) args[3];
 
-	
-	// //	현재 읽는 위치가 파일 끝 이후면 에러 
-
-	// // 
-	// /*
-	// 버퍼 사이즈가 100 넘으면 분할해주기
-	// 분할 개수 파악해서 for문으로 putbuf(), 중간중간 seek해줘야함 : 위치바꿔서 이어서 쓰게
-	// 얘도 fd switch
-	// fd == 1 putbuf이용해 콘솔에 써야함 -> 그전에 버퍼에 넣어서
-	// defqult
-	// filesys_write이용해 짜기
-	
-	// */
 	int write_byte=0;
 	if (!check_address(buffer)) sys_exit_num(-1);
 	if(fd<0||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
@@ -428,4 +381,19 @@ get_file(int fd){
 	ASSERT (thread_current()->num_of_fd != FD_TABLE_SIZE);
 	struct file* file = thread_current()->fd_table[fd];
 	return file;
+}
+
+/*	Copy file descriptor from oldfd to newfd
+If one of them closed, the other still survives.
+Track them by counting file_open_cnt.
+Must revise funcitons in file.c, filesys.c, and sys_close.
+파일 내 open_cnt 추가. 파일 주소 복사 + file_open_cnt 증가. open_cnt == 1일 때만 파일 닫아줌. 파일 open, close시 open_cnt 변경하도록 file.c, filesys.c 수정
+oldfd 나 newfd가 0이나 1이면 어쩜? --> 추후 추가해주기
+*/
+int64_t
+sys_dup2(uint64_t* args){
+	int oldfd = (int) args[1];
+	int newfd = (int) args[2];
+	struct thread* curr = thread_current();
+	return newfd;
 }

@@ -102,8 +102,8 @@ process_fork (const char *name, struct intr_frame *if_ ) {
 	tid_t child_tid = thread_create (name, PRI_DEFAULT, __do_fork, temp_array);
 	if(child_tid==TID_ERROR){ return TID_ERROR;}
 	struct thread* child = get_thread(child_tid);
-	list_push_back(&thread_current()->child_list, &child->child_elem);
 	sema_down(&child->fork_sema);
+	if( child->tid!=TID_ERROR) list_push_back(&thread_current()->child_list, &child->child_elem);
 	return child->tid;
 
 }
@@ -194,10 +194,38 @@ __do_fork (void ** aux) {
 	curr->parent = parent;
 	//curr->tf=if_;
 
+	void* temp_stdin = curr->fd_table[0];
+	void *temp_stdout = curr->fd_table[1];
+	bool is_stdin_active =false;
+	bool is_stdout_active = true;
+
 	for (int i = 0; i < parent->num_of_fd; i++){
 		if (parent->fd_table[i])
-			curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
+			if(parent->fd_table[i]->inode==NULL){
+				if(parent->fd_table[i]->pos==0){
+					is_stdin_active=true;
+					curr->fd_table[i]=temp_stdin;
+				}
+				else if(parent->fd_table[i]->pos==1){
+					is_stdout_active=true;
+					curr->fd_table[i]=temp_stdout;
+				}
+			}
+			else{
+			curr->fd_table[i] = file_duplicate(parent->fd_table[i]);}
+			/*if(curr->fd_table[i]==NULL){
+				if(parent->fd_table[i]->pos==0){
+					is_stdin_active=true;
+					curr->fd_table[i]=temp_stdin;
+				}
+				else if(parent->fd_table[i]->pos==1){
+					is_stdout_active=true;
+					curr->fd_table[i]=temp_stdout;
+				}
+			}*/
 	}
+	if(!is_stdin_active) free(temp_stdin);
+	if(!is_stdout_active) free(temp_stdout);
 	curr->num_of_fd = parent->num_of_fd;
 
 	process_init ();
@@ -356,7 +384,7 @@ process_exit (void) {
 		sema_up(&t->exit_sema);
 	}}
 	
-	for (int i = 2; i < curr->num_of_fd; i++){
+	for (int i = 0; i < curr->num_of_fd; i++){
 		if (curr->fd_table[i])
 			file_close(curr->fd_table[i]);
 	}

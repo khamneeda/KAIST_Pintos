@@ -199,30 +199,39 @@ __do_fork (void ** aux) {
 	bool is_stdin_active =false;
 	bool is_stdout_active = true;
 
+	curr->fd_table[0]=NULL;
+	curr->fd_table[1]=NULL;
+
+
 	for (int i = 0; i < parent->num_of_fd; i++){
 		if (parent->fd_table[i])
-			if(parent->fd_table[i]->inode==NULL){
-				if(parent->fd_table[i]->pos==0){
+			if(parent->fd_table[i]->inode==NULL){//stdin or stdout
+				if(parent->fd_table[i]->pos==0){ //stdin
 					is_stdin_active=true;
 					curr->fd_table[i]=temp_stdin;
+					curr->fd_table[i]->file_open_cnt=parent->fd_table[i]->file_open_cnt;
 				}
-				else if(parent->fd_table[i]->pos==1){
+				else if(parent->fd_table[i]->pos==1){//stdout
 					is_stdout_active=true;
 					curr->fd_table[i]=temp_stdout;
+					curr->fd_table[i]->file_open_cnt=parent->fd_table[i]->file_open_cnt;
 				}
 			}
 			else{
-			curr->fd_table[i] = file_duplicate(parent->fd_table[i]);}
-			/*if(curr->fd_table[i]==NULL){
-				if(parent->fd_table[i]->pos==0){
-					is_stdin_active=true;
-					curr->fd_table[i]=temp_stdin;
+				if(parent->fd_table[i]->file_open_cnt==0)
+					curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
+				else{
+					if(curr->fd_table[i]==NULL){
+						curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
+						curr->fd_table[i]->file_open_cnt=parent->fd_table[i]->file_open_cnt;
+						for(int j = i; i < parent->num_of_fd; i++){
+							if(parent->fd_table[j]==parent->fd_table[i]){
+								curr->fd_table[j]=curr->fd_table[i];
+							}
+						}
+					}
 				}
-				else if(parent->fd_table[i]->pos==1){
-					is_stdout_active=true;
-					curr->fd_table[i]=temp_stdout;
 				}
-			}*/
 	}
 	if(!is_stdin_active) free(temp_stdin);
 	if(!is_stdout_active) free(temp_stdout);
@@ -386,7 +395,7 @@ process_exit (void) {
 	
 	for (int i = 0; i < curr->num_of_fd; i++){
 		if (curr->fd_table[i])
-			file_close(curr->fd_table[i]);
+			file_close_after_filecnt_check(curr->fd_table[i]);
 	}
 	palloc_free_page((void *)curr->fd_table);
 	

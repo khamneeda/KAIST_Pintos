@@ -17,7 +17,7 @@ file_open (struct inode *inode) {
 		file->inode = inode;
 		file->pos = 0;
 		file->deny_write = false;
-		file->file_open_cnt = 1;
+		file->file_open_cnt = 0;
 		return file;
 	} else {
 		inode_close (inode);
@@ -54,6 +54,16 @@ file_close (struct file *file) {
 		inode_close (file->inode);
 		free (file);
 	}
+}
+
+void
+file_close_after_filecnt_check (struct file *file) {
+	ASSERT(file->file_open_cnt >= 0);
+	if (file->file_open_cnt == 0){	
+		file_close(file);
+	}
+	else
+		file->file_open_cnt--;
 }
 
 /* Returns the inode encapsulated by FILE. */

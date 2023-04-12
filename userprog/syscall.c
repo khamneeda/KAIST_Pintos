@@ -287,8 +287,12 @@ sys_read (uint64_t* args) {
 
 	struct file* file;
 	if(fd<0||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
-	switch (fd){
-		case 0:
+
+ 	file = get_file(fd);
+	if (file == NULL) return (int64_t) -1; //is it right????????
+
+	if( file->inode == NULL){ //stdin or stdout
+		if( file->pos == 0 ){ //stdin
 			key = input_getc();
 			buffer[read_byte] = key;
 			read_byte++;
@@ -299,19 +303,22 @@ sys_read (uint64_t* args) {
 			}
 			return (int64_t) read_byte;
 
-		case 1:
-			return (int64_t) -1;
-
-		default:
-			file = get_file(fd);
-			if (file == NULL) return -1;
-			lock_acquire(file_rw_lock(file));
-			read_byte = file_read(file, buffer, size);
-			lock_release(file_rw_lock(file));
-			return (int64_t) read_byte;
+		}
+		else if (file->pos == 1 ){//stdout 
+			return (int64_t) -1; //right??????
+		}
+		else{
+			printf("something wrong!");
+			return -1; 
+		}
 	}
-	return (int64_t) 0;
+	
+	lock_acquire(file_rw_lock(file));
+	read_byte = file_read(file, buffer, size);
+	lock_release(file_rw_lock(file));
+	return (int64_t) read_byte;
 }
+
 int64_t
 sys_write (uint64_t* args) {
 	int fd = (int) args[1];
@@ -321,14 +328,18 @@ sys_write (uint64_t* args) {
 	int write_byte=0;
 	if (!check_address(buffer)) sys_exit_num(-1);
 	if(fd<0||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
-	
+
 	struct file* file;
 	long rest;
-	switch (fd){
-		case 0:
-			return (int64_t) 0;
 
-		case 1:
+    file = get_file(fd);
+	if (file == NULL) return (int64_t) 0; // is it right???????
+
+	if( file->inode == NULL){ //stdin or stdout
+		if( file->pos == 0 ){ //stdin
+			return (int64_t) 0;
+		}
+		else if (file->pos == 1 ){//stdout 
 			rest = (long) size; 
 			unsigned long temp_size;
 			temp_size = 100;
@@ -338,16 +349,18 @@ sys_write (uint64_t* args) {
 			rest=rest-100;
 			}
 			return (int64_t) size;
-		default:
-			file = get_file(fd);
-			if (file == NULL) 
-				return (int64_t) 0;
-			lock_acquire(file_rw_lock(file));
-			write_byte = file_write(file, buffer, size);
-			lock_release(file_rw_lock(file));
-			ASSERT(write_byte >= 0);
-			return (int64_t) write_byte;
+		}
+		else{
+			printf("something wrong!");
+			return -1; 
+		}
 	}
+	lock_acquire(file_rw_lock(file));
+	write_byte = file_write(file, buffer, size);
+	lock_release(file_rw_lock(file));
+	ASSERT(write_byte >= 0);
+	return (int64_t) write_byte;		
+	
 }
 
 void
@@ -355,24 +368,28 @@ sys_seek (uint64_t* args) {
 	int fd = (int) args[1];
 	unsigned position = (unsigned) args[2];
 	struct file* file = get_file(fd);
-	file_seek(file, position);
+	if(file->inode!=NULL)
+		file_seek(file, position);
 }
 
 int64_t
 sys_tell (uint64_t* args) {
 	int fd = (int) args[1];
 	struct file* file = get_file(fd);
-	return file_tell(file);
+	if(file->inode!=NULL)
+		return file_tell(file);
+	return (int64_t) 0; ///??????? 이게맞나일단적음
 }
 
 void
 sys_close (uint64_t* args) {
 	int fd = (int) args[1];
-	if(fd<2||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
+	if(fd<0||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
 	struct file* file = get_file(fd);
 	if(file==NULL){sys_exit_num(-1);}
 	thread_current()->fd_table[fd]=NULL;
-	file_close(file);
+	file_close_after_filecnt_check(file);
+
 }
 
 /* Get file pointer searching in the current threads fd_table */
@@ -395,5 +412,24 @@ sys_dup2(uint64_t* args){
 	int oldfd = (int) args[1];
 	int newfd = (int) args[2];
 	struct thread* curr = thread_current();
+
+	if ((oldfd < 0) || (curr->fd_table[oldfd]== NULL) || (newfd<0 ) )// || (!check_address(curr->fd_table[oldfd]))) page kernel단에 있어서 빼주는게 맞을듯?
+		return (int64_t) -1;
+	if ( oldfd == newfd ){
+		return newfd;
+	}
+	if (curr->fd_table[oldfd] == curr->fd_table[newfd])
+		return newfd;
+	if (curr->fd_table[newfd] != NULL){
+		file_close_after_filecnt_check(curr->fd_table[newfd]);
+	}
+	else{
+		if(curr->num_of_fd<=newfd){
+			curr->num_of_fd=newfd+1;
+		}
+	}
+	curr->fd_table[newfd] = curr->fd_table[oldfd];
+	curr->fd_table[oldfd]->file_open_cnt++;
 	return newfd;
 }
+

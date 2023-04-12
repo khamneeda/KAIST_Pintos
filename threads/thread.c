@@ -252,12 +252,12 @@ thread_create (const char *name, int priority,
 	stdin_file->inode=NULL;
 	stdin_file->pos=0;
 	stdin_file->deny_write=false;
-	stdin_file->file_open_cnt=1;
+	stdin_file->file_open_cnt=0;
 
 	stdout_file->inode=NULL;
 	stdout_file->pos=1;
 	stdin_file->deny_write= false;
-	stdin_file->file_open_cnt=1;
+	stdin_file->file_open_cnt=0;
 
 	t->fd_table[0]=stdin_file;
 	t->fd_table[1]=stdout_file;

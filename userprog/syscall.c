@@ -36,6 +36,10 @@ void sys_close (uint64_t*);
 struct file* get_file(int);
 int64_t sys_dup2(uint64_t*);
 
+int make_dup2_matching_file(int, struct file*);
+struct file* get_dup2_matching_file(int);
+int get_dup2_matching_entry(int);
+
 /* System call.
  *
  * Previously system call services was handled by the interrupt handler
@@ -286,10 +290,10 @@ sys_read (uint64_t* args) {
 	if (!check_address(buffer)) sys_exit_num(-1); // Or return -1? Or put it in default
 
 	struct file* file;
-	if(fd<0||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
+	if(fd<0){return -1;}
 
  	file = get_file(fd);
-	if (file == NULL) return (int64_t) -1; //is it right????????
+	if (file == NULL) return -1; //is it right????????
 
 	if( file->inode == NULL){ //stdin or stdout
 		if( file->pos == 0 ){ //stdin
@@ -312,7 +316,6 @@ sys_read (uint64_t* args) {
 			return -1; 
 		}
 	}
-	
 	lock_acquire(file_rw_lock(file));
 	read_byte = file_read(file, buffer, size);
 	lock_release(file_rw_lock(file));
@@ -327,13 +330,13 @@ sys_write (uint64_t* args) {
 
 	int write_byte=0;
 	if (!check_address(buffer)) sys_exit_num(-1);
-	if(fd<0||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
+	if(fd<0){return -1;}
 
 	struct file* file;
 	long rest;
 
     file = get_file(fd);
-	if (file == NULL) return (int64_t) 0; // is it right???????
+	if (file == NULL)return -1;
 
 	if( file->inode == NULL){ //stdin or stdout
 		if( file->pos == 0 ){ //stdin
@@ -384,20 +387,29 @@ sys_tell (uint64_t* args) {
 void
 sys_close (uint64_t* args) {
 	int fd = (int) args[1];
-	if(fd<0||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
+	if(fd<0){sys_exit_num(-1);}
 	struct file* file = get_file(fd);
 	if(file==NULL){sys_exit_num(-1);}
+	if(fd>=FD_TABLE_SIZE){ 
+		struct thread * curr = thread_current();
+		struct dup2_matching* dup2_array=&curr->fd_table[FD_TABLE_SIZE];
+		dup2_array[get_dup2_matching_entry(fd)].fd=NULL;
+		dup2_array[get_dup2_matching_entry(fd)].file=NULL;
+		return;
+	}
 	thread_current()->fd_table[fd]=NULL;
 	file_close_after_filecnt_check(file);
-
 }
 
 /* Get file pointer searching in the current threads fd_table */
 struct file*
 get_file(int fd){
-	ASSERT (thread_current()->num_of_fd != FD_TABLE_SIZE);
+	//ASSERT (thread_current()->num_of_fd != FD_TABLE_SIZE);
+	if(fd<FD_TABLE_SIZE){
 	struct file* file = thread_current()->fd_table[fd];
 	return file;
+	}
+	else{ return get_dup2_matching_file(fd); }
 }
 
 /*	Copy file descriptor from oldfd to newfd
@@ -413,23 +425,75 @@ sys_dup2(uint64_t* args){
 	int newfd = (int) args[2];
 	struct thread* curr = thread_current();
 
-	if ((oldfd < 0) || (curr->fd_table[oldfd]== NULL) || (newfd<0 ) )// || (!check_address(curr->fd_table[oldfd]))) page kernel단에 있어서 빼주는게 맞을듯?
+	if ((oldfd < 0) || (newfd<0 ) )// || (!check_address(curr->fd_table[oldfd]))) page kernel단에 있어서 빼주는게 맞을듯?
 		return (int64_t) -1;
+    struct file* oldfd_file= get_file(oldfd);
+	struct file* newfd_file= get_file(newfd);
+	if ((oldfd_file== NULL) ){
+		return (int64_t) -1;
+	}
 	if ( oldfd == newfd ){
 		return newfd;
 	}
-	if (curr->fd_table[oldfd] == curr->fd_table[newfd])
+	if (oldfd_file == get_file(newfd))
 		return newfd;
-	if (curr->fd_table[newfd] != NULL){
-		file_close_after_filecnt_check(curr->fd_table[newfd]);
+	if (newfd_file != NULL){
+		file_close_after_filecnt_check(newfd_file);
 	}
 	else{
-		if(curr->num_of_fd<=newfd){
+		if(newfd>=FD_TABLE_SIZE){
+			newfd = make_dup2_matching_file(newfd,oldfd_file);
+			oldfd_file->file_open_cnt++;
+			return newfd;
+		}
+		else if(curr->num_of_fd<=newfd ){
 			curr->num_of_fd=newfd+1;
 		}
 	}
-	curr->fd_table[newfd] = curr->fd_table[oldfd];
-	curr->fd_table[oldfd]->file_open_cnt++;
+	curr->fd_table[newfd] = oldfd_file;
+	oldfd_file->file_open_cnt++;
 	return newfd;
 }
 
+int
+get_dup2_matching_entry(int fd){
+	ASSERT(fd>=FD_TABLE_SIZE);
+	struct thread * curr = thread_current();
+	struct dup2_matching* dup2_array=&curr->fd_table[FD_TABLE_SIZE];
+	for(int i = 0 ; i < curr->num_of_matching_dup2; i++){
+		if(dup2_array[i].fd==fd){
+			return i;
+		}
+	}
+	return -1;
+}
+
+struct file* 
+get_dup2_matching_file(int fd){
+	ASSERT(fd>=FD_TABLE_SIZE);
+	int entry= get_dup2_matching_entry(fd);
+	if(entry==-1) return NULL;
+	struct thread * curr = thread_current();
+	struct dup2_matching* dup2_array=&curr->fd_table[FD_TABLE_SIZE];
+	return dup2_array[entry].file;
+}
+
+int 
+make_dup2_matching_file(int fd, struct file* file){
+	ASSERT(fd>=FD_TABLE_SIZE);
+	int entry= get_dup2_matching_entry(fd);
+	struct thread * curr = thread_current();
+	struct dup2_matching* dup2_array=&curr->fd_table[FD_TABLE_SIZE];
+	if(entry==-1) {
+		//struct dup2_matching dup2_element= dup2_array[curr->num_of_matching_dup2];
+		dup2_array[curr->num_of_matching_dup2].fd=fd;
+		dup2_array[curr->num_of_matching_dup2].file=file;
+		curr->num_of_matching_dup2++;
+		return fd;
+	}
+	else{
+		dup2_array[entry].fd=fd;
+		dup2_array[entry].file=file;
+		return fd;
+	}
+}

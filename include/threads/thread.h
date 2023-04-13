@@ -126,6 +126,7 @@ struct thread {
 //struct file* fd_table [FD_TABLE_SIZE];			/* File descriptor table of this process */
 	struct file** fd_table; 
 	int num_of_fd;						/* The number of file descriptors in fd_table */
+	int num_of_matching_dup2;
 
 	bool is_process_msg;				/* true: msg, false: no msg */
 

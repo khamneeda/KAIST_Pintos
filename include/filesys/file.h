@@ -14,6 +14,12 @@ struct file {
 	int file_open_cnt; 			/* File opened count: The number of fds point this file */
 };
 
+
+struct dup2_matching {
+	int fd;
+	struct file* file;
+};
+
 struct inode;
 
 /* Opening and closing files. */

@@ -650,6 +650,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	//memset(t->fd_table, 0, PGSIZE);
 	// t->fd_table = {0, }; // Memory allocation?
 	t->num_of_fd = 2;
+	t->num_of_matching_dup2 = 0;
 
 #endif
 

@@ -194,8 +194,9 @@ __do_fork (void ** aux) {
 	curr->parent = parent;
 	//curr->tf=if_;
 
-/*	void* temp_stdin = curr->fd_table[0];
+	void* temp_stdin = curr->fd_table[0];
 	void *temp_stdout = curr->fd_table[1];
+
 	bool is_stdin_active =false;
 	bool is_stdout_active = true;
 
@@ -207,18 +208,34 @@ __do_fork (void ** aux) {
 
 	for( int j =0 ; j < parent->num_of_matching_dup2; j++){
 		if(parent_dup2_array[j].file!=NULL){
-		curr_dup2_array[j].fd = parent_dup2_array[j].fd;
-		curr_dup2_array[j].file = file_duplicate(parent_dup2_array[j].file);
+			if(parent_dup2_array[j].file->inode==NULL){
+				if(parent_dup2_array[j].file->pos==0){ //stdin
+					is_stdin_active=true;
+					curr_dup2_array[j].file=temp_stdin;
+					curr_dup2_array[j].file->file_open_cnt=parent_dup2_array[j].file->file_open_cnt;
+					curr_dup2_array[j].fd=parent_dup2_array[j].fd;
+				}
+				else if(parent_dup2_array[j].file->pos==1){//stdout
+					is_stdout_active=true;
+					curr_dup2_array[j].file=temp_stdout;
+					curr_dup2_array[j].file->file_open_cnt=parent_dup2_array[j].file->file_open_cnt;
+					curr_dup2_array[j].fd=parent_dup2_array[j].fd;
+				}
+			}
+			else{
+			curr_dup2_array[j].fd = parent_dup2_array[j].fd;
+			curr_dup2_array[j].file = file_duplicate(parent_dup2_array[j].file);
 			for(int k = 0; k < parent->num_of_fd; k++){
 				if(parent->fd_table[k]==parent_dup2_array[j].file){
 					curr->fd_table[k]=curr_dup2_array[j].file;
 				}
 			}
+			}
 		}
 	}
 
 	for (int i = 0; i < parent->num_of_fd; i++){
-		if (parent->fd_table[i])
+		if (parent->fd_table[i]){
 			if(parent->fd_table[i]->inode==NULL){//stdin or stdout
 				if(parent->fd_table[i]->pos==0){ //stdin
 					is_stdin_active=true;
@@ -232,13 +249,12 @@ __do_fork (void ** aux) {
 				}
 			}
 			else{
-				if(parent->fd_table[i]->file_open_cnt==0)
-					curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
+				if(parent->fd_table[i]->file_open_cnt==0){
+					curr->fd_table[i] = file_duplicate(parent->fd_table[i]);}
 				else{
 					if(curr->fd_table[i]==NULL){
 						curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
-						curr->fd_table[i]->file_open_cnt=parent->fd_table[i]->file_open_cnt;
-						for(int index = i; index < parent->num_of_fd; index ++){
+						for(int index = i+1; index < parent->num_of_fd; index ++){
 							if(parent->fd_table[index]==parent->fd_table[i]){
 								curr->fd_table[index]=curr->fd_table[i];
 							}
@@ -246,17 +262,12 @@ __do_fork (void ** aux) {
 					}
 				}
 			}
+		}
 	}
 	if(!is_stdin_active) free(temp_stdin);
 	if(!is_stdout_active) free(temp_stdout);
-	*/
-	for (int i = 0; i < parent->num_of_fd; i++){
-        if (parent->fd_table[i])
-            curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
-    }
-	
 	curr->num_of_fd = parent->num_of_fd;
-
+	curr->num_of_matching_dup2 = parent->num_of_matching_dup2;
 
 	process_init ();
 
@@ -413,7 +424,15 @@ process_exit (void) {
 		c = c->next;
 		sema_up(&t->exit_sema);
 	}}
-	
+
+	struct dup2_matching* dup2_array=&curr->fd_table[FD_TABLE_SIZE];
+
+	//durl
+	for (int i = 0; i < curr->num_of_matching_dup2; i++){
+		if (dup2_array[i].file!=NULL)
+			file_close_after_filecnt_check(dup2_array[i].file);
+	}
+
 	for (int i = 0; i < curr->num_of_fd; i++){
 		if (curr->fd_table[i])
 			file_close_after_filecnt_check(curr->fd_table[i]);

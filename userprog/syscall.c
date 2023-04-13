@@ -371,6 +371,7 @@ sys_seek (uint64_t* args) {
 	int fd = (int) args[1];
 	unsigned position = (unsigned) args[2];
 	struct file* file = get_file(fd);
+	if(file==NULL){return;}
 	if(file->inode!=NULL)
 		file_seek(file, position);
 }
@@ -379,9 +380,9 @@ int64_t
 sys_tell (uint64_t* args) {
 	int fd = (int) args[1];
 	struct file* file = get_file(fd);
+	if(file==NULL){return;}
 	if(file->inode!=NULL)
 		return file_tell(file);
-	return (int64_t) 0; ///??????? 이게맞나일단적음
 }
 
 void
@@ -395,6 +396,7 @@ sys_close (uint64_t* args) {
 		struct dup2_matching* dup2_array=&curr->fd_table[FD_TABLE_SIZE];
 		dup2_array[get_dup2_matching_entry(fd)].fd=NULL;
 		dup2_array[get_dup2_matching_entry(fd)].file=NULL;
+		file_close_after_filecnt_check(file);
 		return;
 	}
 	thread_current()->fd_table[fd]=NULL;

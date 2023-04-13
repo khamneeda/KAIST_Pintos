@@ -198,7 +198,7 @@ __do_fork (void ** aux) {
 	void *temp_stdout = curr->fd_table[1];
 
 	bool is_stdin_active =false;
-	bool is_stdout_active = true;
+	bool is_stdout_active = false;
 
 	curr->fd_table[0]=NULL;
 	curr->fd_table[1]=NULL;
@@ -207,7 +207,7 @@ __do_fork (void ** aux) {
 	struct dup2_matching* parent_dup2_array=&parent->fd_table[FD_TABLE_SIZE];
 
 	for( int j =0 ; j < parent->num_of_matching_dup2; j++){
-		if(parent_dup2_array[j].file!=NULL){
+		if(parent_dup2_array[j].fd!=NULL){
 			if(parent_dup2_array[j].file->inode==NULL){
 				if(parent_dup2_array[j].file->pos==0){ //stdin
 					is_stdin_active=true;
@@ -226,7 +226,7 @@ __do_fork (void ** aux) {
 			curr_dup2_array[j].fd = parent_dup2_array[j].fd;
 			curr_dup2_array[j].file = file_duplicate(parent_dup2_array[j].file);
 			for(int k = 0; k < parent->num_of_fd; k++){
-				if(parent->fd_table[k]==parent_dup2_array[j].file){
+				if(parent->fd_table[k]==parent_dup2_array[j].fd){
 					curr->fd_table[k]=curr_dup2_array[j].file;
 				}
 			}
@@ -426,7 +426,6 @@ process_exit (void) {
 	}}
 
 	struct dup2_matching* dup2_array=&curr->fd_table[FD_TABLE_SIZE];
-
 	//durl
 	for (int i = 0; i < curr->num_of_matching_dup2; i++){
 		if (dup2_array[i].file!=NULL)

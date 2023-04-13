@@ -194,7 +194,7 @@ __do_fork (void ** aux) {
 	curr->parent = parent;
 	//curr->tf=if_;
 
-	void* temp_stdin = curr->fd_table[0];
+/*	void* temp_stdin = curr->fd_table[0];
 	void *temp_stdout = curr->fd_table[1];
 	bool is_stdin_active =false;
 	bool is_stdout_active = true;
@@ -249,7 +249,14 @@ __do_fork (void ** aux) {
 	}
 	if(!is_stdin_active) free(temp_stdin);
 	if(!is_stdout_active) free(temp_stdout);
+	*/
+	for (int i = 0; i < parent->num_of_fd; i++){
+        if (parent->fd_table[i])
+            curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
+    }
+	
 	curr->num_of_fd = parent->num_of_fd;
+
 
 	process_init ();
 

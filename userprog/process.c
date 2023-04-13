@@ -203,15 +203,15 @@ __do_fork (void ** aux) {
 	curr->fd_table[1]=NULL;
 
 	struct dup2_matching* curr_dup2_array=&curr->fd_table[FD_TABLE_SIZE];
-	struct dup2_matching* parent_dup2_array=&curr->fd_table[FD_TABLE_SIZE];
+	struct dup2_matching* parent_dup2_array=&parent->fd_table[FD_TABLE_SIZE];
 
 	for( int j =0 ; j < parent->num_of_matching_dup2; j++){
 		if(parent_dup2_array[j].file!=NULL){
 		curr_dup2_array[j].fd = parent_dup2_array[j].fd;
 		curr_dup2_array[j].file = file_duplicate(parent_dup2_array[j].file);
 			for(int k = 0; k < parent->num_of_fd; k++){
-				if(parent->fd_table[j]==parent_dup2_array[j].file){
-					curr->fd_table[j]=curr_dup2_array[j].file;
+				if(parent->fd_table[k]==parent_dup2_array[j].file){
+					curr->fd_table[k]=curr_dup2_array[j].file;
 				}
 			}
 		}
@@ -235,12 +235,12 @@ __do_fork (void ** aux) {
 				if(parent->fd_table[i]->file_open_cnt==0)
 					curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
 				else{
-					if(curr->fd_table[i]==NULL){
+					if(curr->fd_table[i].file==NULL){
 						curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
 						curr->fd_table[i]->file_open_cnt=parent->fd_table[i]->file_open_cnt;
-						for(int j = i; j < parent->num_of_fd; j++){
-							if(parent->fd_table[j]==parent->fd_table[i]){
-								curr->fd_table[j]=curr->fd_table[i];
+						for(int index = i; index < parent->num_of_fd; index ++){
+							if(parent->fd_table[index]==parent->fd_table[i]){
+								curr->fd_table[index]=curr->fd_table[i];
 							}
 						}
 					}

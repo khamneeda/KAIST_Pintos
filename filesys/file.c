@@ -42,6 +42,7 @@ file_duplicate (struct file *file) {
 		nfile->pos = file->pos;
 		if (file->deny_write)
 			file_deny_write (nfile);
+		nfile->file_open_cnt = file->file_open_cnt;
 	}
 	return nfile;
 }

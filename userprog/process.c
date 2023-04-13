@@ -235,7 +235,7 @@ __do_fork (void ** aux) {
 				if(parent->fd_table[i]->file_open_cnt==0)
 					curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
 				else{
-					if(curr->fd_table[i].file==NULL){
+					if(curr->fd_table[i]==NULL){
 						curr->fd_table[i] = file_duplicate(parent->fd_table[i]);
 						curr->fd_table[i]->file_open_cnt=parent->fd_table[i]->file_open_cnt;
 						for(int index = i; index < parent->num_of_fd; index ++){

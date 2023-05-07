@@ -62,25 +62,28 @@ err:
 
 /* Find VA from spt and return page. On error, return NULL. */
 struct page *
-spt_find_page (struct supplemental_page_table *spt UNUSED, void *va UNUSED) {
+spt_find_page (struct supplemental_page_table *spt, void *va) {
 	struct page *page = NULL;
 	/* TODO: Fill this function. */
-
+	struct page temp_page;
+	temp_page.va=va;
+	page= hash_entry(hash_find(&spt->hash,temp_page.elem), struct page, elem);
 	return page;
 }
 
 /* Insert PAGE into spt with validation. */
 bool
-spt_insert_page (struct supplemental_page_table *spt UNUSED,
-		struct page *page UNUSED) {
-	int succ = false;
+spt_insert_page (struct supplemental_page_table *spt,
+		struct page *page) {
 	/* TODO: Fill this function. */
-
-	return succ;
+	void* success = hash_insert(&spt->hash,page->elem);
+	if(success==NULL) return true;
+	return false;
 }
 
 void
 spt_remove_page (struct supplemental_page_table *spt, struct page *page) {
+	hash_delete(&spt->hash,page->elem);
 	vm_dealloc_page (page);
 	return true;
 }
@@ -171,20 +174,50 @@ vm_do_claim_page (struct page *page) {
 	return swap_in (page, frame->kva);
 }
 
+uint64_t hash_hash (const struct hash_elem *e, void *aux){
+	struct page* page= hash_entry(e, struct page, elem);
+	return hash_bytes(&page->va,sizeof(uint64_t));
+	// ???? size check
+}
+
+bool hash_less(const struct hash_elem *a, const struct hash_elem *b, void *aux UNUSED) { 
+	struct page* a_page= hash_entry(a, struct page, elem);
+	struct page* b_page= hash_entry(a, struct page, elem);
+	return (a_page->va<b_page->va);
+}
+
 /* Initialize new supplemental page table */
 void
-supplemental_page_table_init (struct supplemental_page_table *spt UNUSED) {
+supplemental_page_table_init (struct supplemental_page_table *spt) {
+	bool success = hash_init (&spt->hash,hash_hash, hash_less, NULL); // aux ==NULL로 세팅
+	ASSERT(success==true);
 }
 
 /* Copy supplemental page table from src to dst */
 bool
-supplemental_page_table_copy (struct supplemental_page_table *dst UNUSED,
-		struct supplemental_page_table *src UNUSED) {
+supplemental_page_table_copy (struct supplemental_page_table *dst,
+	struct supplemental_page_table *src) {
+	struct hash_iterator i;
+	hash_first (&i, &src->hash);
+	while (hash_next (&i))
+	{
+	struct page *page = hash_entry (hash_cur (&i), struct page, elem);
+	struct page *new_page = malloc(sizeof(struct page));
+	memcpy(new_page, page, sizeof(struct page));
+	hash_insert(&dst->hash,new_page->elem);
+	}
+}
+
+void hash_free (struct hash_elem *e, void *aux){
+	struct page* page= hash_entry(e, struct page, elem);
+	free(page);
+	//page안에 저장된 정보 *frame free또는 뭔가 업데이트
 }
 
 /* Free the resource hold by the supplemental page table */
 void
-supplemental_page_table_kill (struct supplemental_page_table *spt UNUSED) {
+supplemental_page_table_kill (struct supplemental_page_table *spt) {
 	/* TODO: Destroy all the supplemental_page_table hold by thread and
 	 * TODO: writeback all the modified contents to the storage. */
+	hash_destroy (&spt->hash, hash_free); 
 }

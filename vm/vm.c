@@ -74,35 +74,46 @@ err:
 	return false;
 }
 
-/* Find VA from spt and return page. On error, return NULL. */
+/* 
+Find VA from spt and return page. On error, return NULL. 
+*/
 struct page *
 spt_find_page (struct supplemental_page_table *spt, void *va) {
 	struct page *page = NULL;
 	/* TODO: Fill this function. */
 	struct page temp_page;
-	temp_page.va=va;
-	page= hash_entry(hash_find(&spt->hash,&temp_page.elem), struct page, elem);
+	temp_page.va = va;
+	page = hash_entry(hash_find(&spt->hash, &temp_page.elem), struct page, elem);
 	return page;
 }
 
-/* Insert PAGE into spt with validation. */
+/* 
+Insert PAGE into spt with validation. 
+가상 주소가 spt에 존재 안함 체크
+*/
 bool
 spt_insert_page (struct supplemental_page_table *spt,
 		struct page *page) {
 	/* TODO: Fill this function. */
 
 	//이미 spt에 있는지 확인해야함
+	struct page* tmp_page = spt_find_page(spt, page->va);
+	ASSERT(tmp_page == NULL); // assert말고 다른걸로 고치기
 
 	void* success = hash_insert(&spt->hash,&page->elem);
 	if(success==NULL) return true;
 	return false;
 }
 
+/*
+delete 성공여부 추가
+*/
 void
 spt_remove_page (struct supplemental_page_table *spt, struct page *page) {
-	hash_delete(&spt->hash,&page->elem);
+	struct hash_elem e = hash_delete(&spt->hash,&page->elem);
+	ASSERT(e != NULL); //임시로 바꿔둠 error띄우던가 해야할거같은데
+
 	vm_dealloc_page (page);
-	return true;
 }
 
 
@@ -115,16 +126,17 @@ vm_get_victim (void) {
 	struct list_elem* c;
 	for (c = list_front(&frame_table); c != list_end(&frame_table); c = c->next){
 		victim = list_entry(c ,struct frame, elem);
-		if ( !pml4_is_accessed (thread_current()->pml4, victim->kva) && !pml4_is_dirty(thread_current()->pml4, victim->kva)) 
-		return victim;
+		if (!pml4_is_accessed (thread_current()->pml4, victim->kva) && 
+			!pml4_is_dirty(thread_current()->pml4, victim->kva)) 
+				return victim;
 	}
 	for (c = list_front(&frame_table); c != list_end(&frame_table); c = c->next){
 		victim = list_entry(c ,struct frame, elem);
 		if (!pml4_is_dirty(thread_current()->pml4, victim->kva)) 
-		return victim;
+			return victim;
 	}
 	if (c==list_end(&frame_table)){ victim = list_entry(list_front(&frame_table) ,struct frame, elem); }
-	return victim;
+		return victim;
 }
 
 /* Evict one page and return the corresponding frame.
@@ -133,9 +145,9 @@ static struct frame *
 vm_evict_frame (void) {
 	struct frame *victim = vm_get_victim ();
 	/* TODO: swap out the victim and return the evicted frame. */
-	bool succ= swap_out(victim->page); //dirty bit 등 고려 안 함. 
+	bool succ = swap_out(victim->page); //dirty bit 등 고려 안 함. 
 	// frame 내 정보 바꿈 생각 안 함. 
-	victim->page=NULL; //swap out 안에서 바꿔주자 
+	victim->page = NULL; //swap out 안에서 바꿔주자 
 	list_remove(&victim->elem);
 	if (!succ) return NULL;
 	return victim;
@@ -144,21 +156,25 @@ vm_evict_frame (void) {
 /* palloc() and get frame. If there is no available page, evict the page
  * and return it. This always return valid address. That is, if the user pool
  * memory is full, this function evicts the frame to get the available memory
- * space.*/
+ * space.
+ * palloc_get_page로 프레임 생성, 리턴
+ * 불가시 evict(swap)
+ * 
+ * */
 static struct frame *
 vm_get_frame (void) {
 	struct frame *frame = NULL;
 	/* TODO: Fill this function. */
 	void* va = palloc_get_page(PAL_USER); 
 
-	if(va==NULL){ frame = vm_evict_frame(); }
+	if(va == NULL) { frame = vm_evict_frame(); }
 	else{
 		frame= malloc(sizeof(struct frame));
 		frame-> kva = va;
 	}
 	ASSERT (frame != NULL);
 	ASSERT (frame->page == NULL);
-	list_push_back(&frame_table,&frame->elem);
+	list_push_back(&frame_table, &frame->elem);
 	return frame;
 }
 
@@ -249,10 +265,13 @@ bool hash_less(const struct hash_elem *a, const struct hash_elem *b, void *aux U
 	return (a_page->va<b_page->va);
 }
 
-/* Initialize new supplemental page table */
+/* 
+Initialize new supplemental page table 
+새로운 프로세스 시작시, fork시 호출
+*/
 void
 supplemental_page_table_init (struct supplemental_page_table *spt) {
-	bool success = hash_init (&spt->hash,hash_hash, hash_less, NULL); // aux ==NULL로 세팅
+	bool success = hash_init (&spt->hash, hash_hash, hash_less, NULL); // aux ==NULL로 세팅
 	ASSERT(success==true);
 }
 
@@ -261,14 +280,18 @@ bool
 supplemental_page_table_copy (struct supplemental_page_table *dst,
 	struct supplemental_page_table *src) {
 	struct hash_iterator i;
+	bool success = true;
+
 	hash_first (&i, &src->hash);
 	while (hash_next (&i))
 	{
 	struct page *page = hash_entry (hash_cur (&i), struct page, elem);
 	struct page *new_page = malloc(sizeof(struct page));
 	memcpy(new_page, page, sizeof(struct page));
-	hash_insert(&dst->hash,&new_page->elem);
+	success = hash_insert(&dst->hash,&new_page->elem);
+	if (!success) return success;
 	}
+	return success;
 }
 
 void hash_free (struct hash_elem *e, void *aux){

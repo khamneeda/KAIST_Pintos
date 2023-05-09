@@ -65,6 +65,8 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 		else if (VM_TYPE(type) ==VM_FILE ) initializer = file_backed_initializer;
 
 		uninit_new (page, upage, init, VM_UNINIT, aux,initializer);
+		page->writable=writable;
+		
 		spt_insert_page(spt,page);
 
 	}
@@ -223,10 +225,9 @@ vm_do_claim_page (struct page *page) {
 	/* Set links */
 	frame->page = page;
 	page->frame = frame;
-	bool writable = true; //??
 
 	/* TODO: Insert page table entry to map page's VA to frame's PA. */
-	plm4_set_page(thread_current()->pml4,page->va,frame->kva, writable);
+	plm4_set_page(thread_current()->pml4,page->va,frame->kva, page->writable);
 
 	return swap_in (page, frame->kva);
 }

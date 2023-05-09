@@ -29,6 +29,7 @@ enum vm_type {
 #include "vm/file.h"
 #include "lib/kernel/hash.h"
 #include <list.h>
+#include "threads/mmu.h"
 #ifdef EFILESYS
 #include "filesys/page_cache.h"
 #endif

@@ -182,8 +182,6 @@ and return control to the user program.
 There are three cases of bogus page fault: lazy-loaded, 
 swaped-out page, and write-protected page (See Copy-on-Write (Extra)). 
 For now, just consider the first case, lazy-loaded page.
-
-
 */
 
 bool
@@ -194,10 +192,17 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
 	page = spt_find_page(spt,addr);
-	if(page==NULL){ 
+	if(page == NULL){ 
 		return false;
 	}
-	return vm_do_claim_page (page);
+
+	bool succ = vm_do_claim_page (page);
+
+	if (succ) succ = uninit_initialize (page, page->frame->kva);
+
+
+
+	return succ;
 }
 
 /* Free the page.
@@ -227,7 +232,7 @@ vm_do_claim_page (struct page *page) {
 	page->frame = frame;
 
 	/* TODO: Insert page table entry to map page's VA to frame's PA. */
-	plm4_set_page(thread_current()->pml4,page->va,frame->kva, page->writable);
+	pml4_set_page(thread_current()->pml4, page->va, frame->kva, page->writable);
 
 	return swap_in (page, frame->kva);
 }

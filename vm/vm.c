@@ -88,6 +88,9 @@ bool
 spt_insert_page (struct supplemental_page_table *spt,
 		struct page *page) {
 	/* TODO: Fill this function. */
+
+	//이미 spt에 있는지 확인해야함
+
 	void* success = hash_insert(&spt->hash,&page->elem);
 	if(success==NULL) return true;
 	return false;
@@ -168,6 +171,19 @@ vm_handle_wp (struct page *page UNUSED) {
 }
 
 /* Return true on success */
+/*
+first checks if it is a valid page fault. 
+By valid, we mean the fault that accesses invalid. 
+If it is a bogus fault, you load some contents into the page 
+and return control to the user program.
+
+There are three cases of bogus page fault: lazy-loaded, 
+swaped-out page, and write-protected page (See Copy-on-Write (Extra)). 
+For now, just consider the first case, lazy-loaded page.
+
+
+*/
+
 bool
 vm_try_handle_fault (struct intr_frame *f, void *addr,
 		bool user, bool write, bool not_present) {

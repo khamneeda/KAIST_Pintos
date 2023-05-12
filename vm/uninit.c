@@ -42,7 +42,12 @@ uninit_new (struct page *page, void *va, vm_initializer *init,
 	};
 }
 
-/* Initalize the page on first fault */
+/* 
+* Initalize the page on first fault 
+* The template code first fetches vm_initializer 
+* and aux and calls the corresponding page_initializer 
+* through a function pointer. 
+*/
 static bool
 uninit_initialize (struct page *page, void *kva) {
 	struct uninit_page *uninit = &page->uninit;

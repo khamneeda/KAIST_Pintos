@@ -47,7 +47,6 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 		vm_initializer *init, void *aux) {
 //vm_alloc_page_with_initializer (VM_ANON, upage, writable, lazy_load_segment, aux)
 	ASSERT (VM_TYPE(type) != VM_UNINIT)
-
 	struct supplemental_page_table *spt = &thread_current ()->spt;
 
 	/* Check wheter the upage is already occupied or not. */
@@ -58,17 +57,19 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 		/* TODO: Insert the page into the spt. */
 
 		struct page *page = malloc(sizeof(struct page));
+		if (page == NULL) goto err;
 
 		bool (*initializer)(struct page *, enum vm_type, void *);
 
-		if(VM_TYPE(type)==VM_ANON) initializer = anon_initializer;
-		else if (VM_TYPE(type) ==VM_FILE ) initializer = file_backed_initializer;
+		if (VM_TYPE(type) == VM_ANON) initializer = anon_initializer; //type check 이렇게 하는게 맞나
+		else if (VM_TYPE(type) == VM_FILE) initializer = file_backed_initializer;
 
-		uninit_new (page, upage, init, VM_UNINIT, aux,initializer);
-		page->writable=writable;
+		uninit_new (page, upage, init, VM_UNINIT, aux, initializer);
+		page->writable = writable;
 		
-		spt_insert_page(spt,page);
-
+		bool success = spt_insert_page(spt, page);
+		if (success) return true;
+		free(page);
 	}
 err:
 	return false;
@@ -83,7 +84,9 @@ spt_find_page (struct supplemental_page_table *spt, void *va) {
 	/* TODO: Fill this function. */
 	struct page temp_page;
 	temp_page.va = va;
-	page = hash_entry(hash_find(&spt->hash, &temp_page.elem), struct page, elem);
+	struct hash_elem* h_elem = hash_find(&spt->hash, &temp_page.elem);
+	if (h_elem == NULL) return NULL;
+	page = hash_entry(h_elem, struct page, elem);
 	return page;
 }
 
@@ -98,7 +101,7 @@ spt_insert_page (struct supplemental_page_table *spt,
 
 	//이미 spt에 있는지 확인해야함
 	struct page* tmp_page = spt_find_page(spt, page->va);
-	ASSERT(tmp_page == NULL); // assert말고 다른걸로 고치기
+	if (tmp_page == NULL) return false;
 
 	void* success = hash_insert(&spt->hash,&page->elem);
 	if(success==NULL) return true;
@@ -145,10 +148,12 @@ static struct frame *
 vm_evict_frame (void) {
 	struct frame *victim = vm_get_victim ();
 	/* TODO: swap out the victim and return the evicted frame. */
+	/*아래 코드 swap-out에서 할 수 있는지 고려*/
 	bool succ = swap_out(victim->page); //dirty bit 등 고려 안 함. 
 	// frame 내 정보 바꿈 생각 안 함. 
 	victim->page = NULL; //swap out 안에서 바꿔주자 
 	list_remove(&victim->elem);
+
 	if (!succ) return NULL;
 	return victim;
 }
@@ -167,7 +172,9 @@ vm_get_frame (void) {
 	/* TODO: Fill this function. */
 	void* va = palloc_get_page(PAL_USER); 
 
-	if(va == NULL) { frame = vm_evict_frame(); }
+	if(va == NULL) { 
+		frame = vm_evict_frame(); 
+	}
 	else{
 		frame= malloc(sizeof(struct frame));
 		frame-> kva = va;
@@ -234,7 +241,9 @@ bool
 vm_claim_page (void *va) {
 	struct page *page = NULL;
 	/* TODO: Fill this function */
-	
+	page = spt_find_page(&thread_current()->spt, va);
+	if (page == NULL) return false;
+
 	return vm_do_claim_page (page);
 }
 

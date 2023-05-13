@@ -36,8 +36,15 @@ bool
 anon_initializer (struct page *page, enum vm_type type, void *kva) {
 	/* Set up the handler */
 	page->operations = &anon_ops;
+	struct uninit_page *uninit = &page->uninit;
+	void* aux = uninit->aux; 
+	memset(&uninit, 0, sizeof(struct uninit_page));
 
 	struct anon_page *anon_page = &page->anon;
+	anon_page->type=type;
+    anon_page->kva=kva;
+	anon_page->aux=aux;
+
 }
 
 /* Swap in the page by read contents from the swap disk. */
@@ -55,5 +62,9 @@ anon_swap_out (struct page *page) {
 /* Destroy the anonymous page. PAGE will be freed by the caller. */
 static void
 anon_destroy (struct page *page) {
+	palloc_free_page(page->frame->kva);
+	free(page->frame);
+	
 	struct anon_page *anon_page = &page->anon;
+	memset(anon_page, 0, sizeof(struct anon_page));
 }

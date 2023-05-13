@@ -904,15 +904,11 @@ setup_stack (struct intr_frame *if_) {
 	 * TODO: If success, set the rsp accordingly.
 	 * TODO: You should mark the page is stack. */
 	/* TODO: Your code goes here */
-	struct page* page= malloc(sizeof(struct page));
-	page->va= stack_bottom;
-	success = vm_do_claim_page(page);
+	success = vm_claim_page(stack_bottom);
 	if (success) {
 		if_->rsp = USER_STACK;
-		vm_stack_growth(USER_STACK);
+		thread_current()->rsp=stack_bottom;
 	}
-	else
-		free(page);
 
 	return success;
 }

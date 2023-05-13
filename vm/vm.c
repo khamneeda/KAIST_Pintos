@@ -5,7 +5,6 @@
 #include "vm/inspect.h"
 
 #include "vm/uninit.h"
-#include "userprog/process.h"
 
 
 struct list frame_table;
@@ -238,7 +237,7 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 
 	bool succ = vm_do_claim_page (page);
 
-	if (succ) succ = uninit_initialize (page, page->frame->kva);
+	//if (succ) succ = uninit_initialize (page, page->frame->kva);
 	// 이거 수정해야할듯? 이미 page_claim했으니 처리
 
 
@@ -259,11 +258,23 @@ bool
 vm_claim_page (void *va) {
 	struct page *page = NULL;
 	/* TODO: Fill this function */
-	page = spt_find_page(&thread_current()->spt, va);
-	if (page == NULL) return false;
-
-	return vm_do_claim_page (page);
+	page= malloc(sizeof(struct page));
+	page->va= va;
+	bool success = vm_do_claim_page (page);
+	if (!success) free(page);
+	return success;
 }
+
+static bool
+vm_install_page (void *upage, void *kpage, bool writable) {
+	struct thread *t = thread_current ();
+
+	/* Verify that there's not already a page at that virtual
+	 * address, then map our page there. */
+	return (pml4_get_page (t->pml4, upage) == NULL
+			&& pml4_set_page (t->pml4, upage, kpage, writable));
+}
+
 
 /* Claim the PAGE and set up the mmu. */
 static bool
@@ -275,7 +286,7 @@ vm_do_claim_page (struct page *page) {
 	page->frame = frame;
 
 	/* TODO: Insert page table entry to map page's VA to frame's PA. */
-	bool success= install_page(page->va, frame->kva, page->writable);
+	bool success= vm_install_page(page->va, frame->kva, page->writable);
 	if(!success) return false;
 
 	return swap_in (page, frame->kva);

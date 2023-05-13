@@ -190,7 +190,8 @@ vm_get_frame (void) {
 
 /* Growing the stack. */
 static void
-vm_stack_growth (void *addr UNUSED) {
+vm_stack_growth (uint64_t addr) {
+	thread_current()->rsp = addr-PGSIZE;
 }
 
 /* Handle the fault on write_protected page */
@@ -269,7 +270,8 @@ vm_do_claim_page (struct page *page) {
 	page->frame = frame;
 
 	/* TODO: Insert page table entry to map page's VA to frame's PA. */
-	pml4_set_page(thread_current()->pml4, page->va, frame->kva, page->writable);
+	bool success= install_page(page->va, frame->kva, page->writable);
+	if(!success) return false;
 
 	return swap_in (page, frame->kva);
 }

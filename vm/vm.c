@@ -41,6 +41,7 @@ page_get_type (struct page *page) {
 static struct frame *vm_get_victim (void);
 static bool vm_do_claim_page (struct page *page);
 static struct frame *vm_evict_frame (void);
+static void vm_stack_growth (void * addr);
 
 /* Create the pending page object with initializer. If you want to create a
  * page, do not create it directly and make it through this function or
@@ -193,9 +194,17 @@ vm_get_frame (void) {
 }
 
 /* Growing the stack. */
+/* This function checks whether the addr is valid.
+ * Lower stack floor n times.
+*/
 static void
-vm_stack_growth (uint64_t addr) {
-	thread_current()->rsp = addr-PGSIZE;
+vm_stack_growth (void * addr){
+	struct thread* curr = thread_current();
+	uint64_t MAX_STACK = USER_STACK - 1<<20;
+	if (addr < curr->stack_floor && add >= MAX_STACK){
+		int times = (curr->stack_floor - addr) / PGSIZE +1;
+		curr->stack_floor = addr - PGSIZE * times;
+	}
 }
 
 /* Handle the fault on write_protected page */
@@ -230,19 +239,21 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 	struct page *page = NULL;
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
-	page = spt_find_page(spt,addr);
-	if(page == NULL){ 
-		return false;
+	if (addr >= KERN_BASE) return false;
+	if (write == true && page->writable == false) return false;
+
+	page = spt_find_page(spt, addr);
+	if (page == NULL) return false;
+	//?? not_present는 왜 주어진거임?
+	bool succ = false;
+	if (not_present) {
+		vm_stack_growth(addr);
+		succ = vm_do_claim_page (page);
 	}
-
-	bool succ = vm_do_claim_page (page);
-
+	return succ;
+	
 	//if (succ) succ = uninit_initialize (page, page->frame->kva);
 	// 이거 수정해야할듯? 이미 page_claim했으니 처리
-
-
-
-	return succ;
 }
 
 /* Free the page.
@@ -335,11 +346,13 @@ supplemental_page_table_copy (struct supplemental_page_table *dst,
 
 void hash_free (struct hash_elem *e, void *aux){
 	struct page* page= hash_entry(e, struct page, elem);
+	free(page->frame);
 	free(page);
 	//page안에 저장된 정보 *frame free또는 뭔가 업데이트
 }
 
 /* Free the resource hold by the supplemental page table */
+/* This function also free frames linked to pages*/
 void
 supplemental_page_table_kill (struct supplemental_page_table *spt) {
 	/* TODO: Destroy all the supplemental_page_table hold by thread and

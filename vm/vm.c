@@ -346,8 +346,9 @@ supplemental_page_table_copy (struct supplemental_page_table *dst,
 
 void hash_free (struct hash_elem *e, void *aux){
 	struct page* page= hash_entry(e, struct page, elem);
-	free(page->frame);
-	free(page);
+	vm_dealloc_page(page);
+	//free(page->frame);
+	//struct frame은 free해줘도되나
 	//page안에 저장된 정보 *frame free또는 뭔가 업데이트
 }
 

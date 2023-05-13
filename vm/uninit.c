@@ -69,9 +69,9 @@ uninit_initialize (struct page *page, void *kva) {
  * PAGE will be freed by the caller. */
 static void
 uninit_destroy (struct page *page) {
-	struct uninit_page *uninit UNUSED = &page->uninit;
+	struct uninit_page *uninit = &page->uninit;
 	/* TODO: Fill this function.
 	 * TODO: If you don't have anything to do, just return. */
-	
-
+	struct hash_elem* e = hash_delete(&thread_current()->spt->hash, &page->elem);
+	ASSERT(e != NULL); //나중에~
 }

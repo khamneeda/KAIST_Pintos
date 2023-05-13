@@ -116,4 +116,10 @@ void vm_dealloc_page (struct page *page);
 bool vm_claim_page (void *va);
 enum vm_type page_get_type (struct page *page);
 
+
+
+static bool vm_do_claim_page (struct page *page);
+static void vm_stack_growth(uint64_t addr);
+
+
 #endif  /* VM_VM_H */

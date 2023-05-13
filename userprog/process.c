@@ -177,8 +177,8 @@ __do_fork (void ** aux) {
 
 	process_activate (curr);
 #ifdef VM
-	supplemental_page_table_init (&current->spt);
-	if (!supplemental_page_table_copy (&current->spt, &parent->spt))
+	supplemental_page_table_init (&curr->spt);
+	if (!supplemental_page_table_copy (&curr->spt, &parent->spt))
 		goto error;
 #else
 	if (!pml4_for_each (parent->pml4, duplicate_pte, parent))
@@ -824,13 +824,16 @@ lazy_load_segment (struct page *page, void *aux) {
 	/* TODO: VA is available when calling this function. */
 	struct lazy_args_set* aux_set = (struct lazy_args_set*) aux;
 	struct file* file = aux_set->file;
+	size_t page_read_bytes= aux_set->page_read_bytes;
+	size_t page_zero_bytes= aux_set->page_zero_bytes;
+
 	file_seek(file, aux_set->ofs);
 
 	if (file_read(file, page, page_read_bytes) != (int) page_read_bytes){
 		palloc_free_page(page);
 		return false;
 	}
-	memset(page + page_read_byte, 0, page_zero_bytes);
+	memset(page + page_read_bytes, 0, page_zero_bytes);
 
 	return true;
 }
@@ -867,14 +870,13 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 
 		/* TODO: Set up aux to pass information to the lazy_load_segment. */
 		void *aux = NULL;
-		struct lazy_args_set *aux_set = malloc(struct lazy_args_set); //??
+		struct lazy_args_set *aux_set = malloc(sizeof(struct lazy_args_set)); //??
 		aux_set->file=file;
 		aux_set->ofs=ofs;
 		aux_set->read_bytes=read_bytes;
 		aux_set->zero_bytes=zero_bytes;
 		aux_set->page_read_bytes=page_read_bytes;
 		aux_set->page_zero_bytes=page_zero_bytes;
-		aux_set->count = count;
 
 		aux= (void *) aux_set;
 
@@ -905,9 +907,10 @@ setup_stack (struct intr_frame *if_) {
 	struct page* page= malloc(sizeof(struct page));
 	page->va= stack_bottom;
 	success = vm_do_claim_page(page);
-	if (success) 
+	if (success) {
 		if_->rsp = USER_STACK;
 		vm_stack_growth(USER_STACK);
+	}
 	else
 		free(page);
 

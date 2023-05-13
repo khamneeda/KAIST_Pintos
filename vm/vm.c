@@ -4,6 +4,10 @@
 #include "vm/vm.h"
 #include "vm/inspect.h"
 
+#include "vm/uninit.h"
+#include "userprog/process.h"
+
+
 struct list frame_table;
 
 /* Initializes the virtual memory subsystem by invoking each subsystem's
@@ -63,17 +67,18 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 
 		if (VM_TYPE(type) == VM_ANON) initializer = anon_initializer; //type check 이렇게 하는게 맞나
 		else if (VM_TYPE(type) == VM_FILE) initializer = file_backed_initializer;
-		else goto err_free;
+		else {
+			free(page);
+			return false;
+		}
 
 		uninit_new (page, upage, init, VM_UNINIT, aux, initializer);
 		page->writable = writable;
 		
 		bool success = spt_insert_page(spt, page);
 		if (success) return true;
-	}
-err_free:
 		free(page);
-
+	}
 err:
 	return false;
 }
@@ -116,7 +121,7 @@ delete 성공여부 추가
 */
 void
 spt_remove_page (struct supplemental_page_table *spt, struct page *page) {
-	struct hash_elem e = hash_delete(&spt->hash,&page->elem);
+	struct hash_elem* e = hash_delete(&spt->hash, &page->elem);
 	ASSERT(e != NULL); //임시로 바꿔둠 error띄우던가 해야할거같은데
 
 	vm_dealloc_page (page);

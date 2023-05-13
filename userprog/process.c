@@ -231,18 +231,21 @@ process_exec (void *f_name) {
 	_if.cs = SEL_UCSEG;
 	_if.eflags = FLAG_IF | FLAG_MBS;
 
-	void* temp_page = palloc_get_page(PAL_ZERO);
+	void* temp_page = malloc(100);
 	memcpy(temp_page, file_name, 100);
 
 	/* We first kill the current context */
 	process_cleanup ();
+	#ifdef VM
+    supplemental_page_table_init(&thread_current()->spt);
+    #endif
 
 	/* And then load the binary */
 	memcpy(file_name, temp_page, 100);
 	success = load (file_name, &_if);
 
 	/* If load failed, quit. */
-	palloc_free_page(temp_page);
+	free(temp_page);
 	//palloc_free_page (file_name);
 	if (!success)
 		return -1;
@@ -826,14 +829,15 @@ lazy_load_segment (struct page *page, void *aux) {
 	struct file* file = aux_set->file;
 	size_t page_read_bytes= aux_set->page_read_bytes;
 	size_t page_zero_bytes= aux_set->page_zero_bytes;
+	void* kpage=page->frame->kva;
 
 	file_seek(file, aux_set->ofs);
 
-	if (file_read(file, page, page_read_bytes) != (int) page_read_bytes){
-		palloc_free_page(page);
+	if (file_read(file, kpage, page_read_bytes) != (int) page_read_bytes){
+		//palloc_free_page(kpage);
 		return false;
 	}
-	memset(page + page_read_bytes, 0, page_zero_bytes);
+	memset(kpage + page_read_bytes, 0, page_zero_bytes);
 
 	return true;
 }
@@ -904,12 +908,13 @@ setup_stack (struct intr_frame *if_) {
 	 * TODO: If success, set the rsp accordingly.
 	 * TODO: You should mark the page is stack. */
 	/* TODO: Your code goes here */
+	success = vm_alloc_page_with_initializer(VM_ANON, stack_bottom, true, NULL, NULL);
+	if(!success) return false;
 	success = vm_claim_page(stack_bottom);
 	if (success) {
 		if_->rsp = USER_STACK;
 		thread_current()->stack_floor=stack_bottom;
 	}
-
 	return success;
 }
 #endif /* VM */

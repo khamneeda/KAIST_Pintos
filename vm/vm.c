@@ -15,6 +15,8 @@ void
 vm_init (void) {
 	vm_anon_init ();
 	vm_file_init ();
+	list_init(&frame_table);
+
 #ifdef EFILESYS  /* For project 4 */
 	pagecache_init ();
 #endif
@@ -72,7 +74,7 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 			return false;
 		}
 
-		uninit_new (page, upage, init, VM_UNINIT, aux, initializer);
+		uninit_new (page, upage, init, type, aux, initializer);
 		page->writable = writable;
 		
 		bool success = spt_insert_page(spt, page);
@@ -109,7 +111,7 @@ spt_insert_page (struct supplemental_page_table *spt,
 
 	//이미 spt에 있는지 확인해야함
 	struct page* tmp_page = spt_find_page(spt, page->va);
-	if (tmp_page == NULL) return false;
+	if (tmp_page != NULL) return false;
 
 	void* success = hash_insert(&spt->hash,&page->elem);
 	if(success==NULL) return true;
@@ -178,14 +180,15 @@ static struct frame *
 vm_get_frame (void) {
 	struct frame *frame = NULL;
 	/* TODO: Fill this function. */
-	void* va = palloc_get_page(PAL_USER); 
+	void* kva = palloc_get_page(PAL_USER);
 
-	if(va == NULL) { 
+	if(kva == NULL) { 
 		frame = vm_evict_frame(); 
 	}
 	else{
 		frame= malloc(sizeof(struct frame));
-		frame-> kva = va;
+		frame-> kva = kva;
+		frame-> page =NULL;
 	}
 	ASSERT (frame != NULL);
 	ASSERT (frame->page == NULL);
@@ -270,10 +273,9 @@ bool
 vm_claim_page (void *va) {
 	struct page *page = NULL;
 	/* TODO: Fill this function */
-	page= malloc(sizeof(struct page));
-	page->va= va;
+	page = spt_find_page(&thread_current()->spt, va);
+	if(page == NULL) return false;
 	bool success = vm_do_claim_page (page);
-	if (!success) free(page);
 	return success;
 }
 
@@ -306,13 +308,13 @@ vm_do_claim_page (struct page *page) {
 
 uint64_t hash_hash (const struct hash_elem *e, void *aux){
 	struct page* page= hash_entry(e, struct page, elem);
-	return hash_bytes(&page->va,sizeof(uint64_t));
+	return hash_bytes(&page->va,sizeof(page->va));
 	// ???? size check
 }
 
 bool hash_less(const struct hash_elem *a, const struct hash_elem *b, void *aux UNUSED) { 
 	struct page* a_page= hash_entry(a, struct page, elem);
-	struct page* b_page= hash_entry(a, struct page, elem);
+	struct page* b_page= hash_entry(b, struct page, elem);
 	return (a_page->va<b_page->va);
 }
 
@@ -323,7 +325,6 @@ Initialize new supplemental page table
 void
 supplemental_page_table_init (struct supplemental_page_table *spt) {
 	bool success = hash_init (&spt->hash, hash_hash, hash_less, NULL); // aux ==NULL로 세팅
-	ASSERT(success==true);
 }
 
 /* Copy supplemental page table from src to dst */
@@ -347,7 +348,7 @@ supplemental_page_table_copy (struct supplemental_page_table *dst,
 
 void hash_free (struct hash_elem *e, void *aux){
 	struct page* page= hash_entry(e, struct page, elem);
-	vm_dealloc_page(page);
+	if(page!=NULL)	vm_dealloc_page(page);
 	//free(page->frame);
 	//struct frame은 free해줘도되나
 	//page안에 저장된 정보 *frame free또는 뭔가 업데이트

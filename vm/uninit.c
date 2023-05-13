@@ -15,6 +15,7 @@ static bool uninit_initialize (struct page *page, void *kva);
 static void uninit_destroy (struct page *page);
 
 /* DO NOT MODIFY this struct */
+/* Unitit ops에 swap_in이 들어가서 swap_in할 때 uninit_init이 호출됨 */
 static const struct page_operations uninit_ops = {
 	.swap_in = uninit_initialize,
 	.swap_out = NULL,
@@ -47,6 +48,7 @@ uninit_new (struct page *page, void *va, vm_initializer *init,
 * The template code first fetches vm_initializer 
 * and aux and calls the corresponding page_initializer 
 * through a function pointer. 
+* 이게 swap_in이라고 생각
 */
 static bool
 uninit_initialize (struct page *page, void *kva) {

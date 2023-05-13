@@ -18,6 +18,7 @@ static const struct page_operations anon_ops = {
 };
 
 /* Initialize the data for anonymous pages */
+/* 얘는 전체 시스템 초기화인듯? */
 void
 vm_anon_init (void) {
 	/* TODO: Set up the swap_disk. */
@@ -28,6 +29,9 @@ vm_anon_init (void) {
 }
 
 /* Initialize the file mapping */
+/* Unitit => anon이 되게 세팅해주는 함수
+ * uninit_ops.swap_in => uninit_initialize가 얘를 호출
+ * 얘를 swap_in이라고 생각 */
 bool
 anon_initializer (struct page *page, enum vm_type type, void *kva) {
 	/* Set up the handler */

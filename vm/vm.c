@@ -63,14 +63,17 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 
 		if (VM_TYPE(type) == VM_ANON) initializer = anon_initializer; //type check 이렇게 하는게 맞나
 		else if (VM_TYPE(type) == VM_FILE) initializer = file_backed_initializer;
+		else goto err_free;
 
 		uninit_new (page, upage, init, VM_UNINIT, aux, initializer);
 		page->writable = writable;
 		
 		bool success = spt_insert_page(spt, page);
 		if (success) return true;
-		free(page);
 	}
+err_free:
+		free(page);
+
 err:
 	return false;
 }
@@ -207,6 +210,14 @@ swaped-out page, and write-protected page (See Copy-on-Write (Extra)).
 For now, just consider the first case, lazy-loaded page.
 */
 
+/*
+exception.c의 page_fault가 호출
+true => valid fault, frame할당해서 핸들링 잘 해줌
+false => 잘못된 참조, page_fault로 돌아가 kill해줌
+잘못된 참조 : 유저일때 커널 주소에 접근?
+writable하지 않은데 write?
+not_present page? 이건뭐야 True: not-present page, false: writing r/o page
+*/
 bool
 vm_try_handle_fault (struct intr_frame *f, void *addr,
 		bool user, bool write, bool not_present) {
@@ -222,6 +233,7 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 	bool succ = vm_do_claim_page (page);
 
 	if (succ) succ = uninit_initialize (page, page->frame->kva);
+	// 이거 수정해야할듯? 이미 page_claim했으니 처리
 
 
 
@@ -294,11 +306,11 @@ supplemental_page_table_copy (struct supplemental_page_table *dst,
 	hash_first (&i, &src->hash);
 	while (hash_next (&i))
 	{
-	struct page *page = hash_entry (hash_cur (&i), struct page, elem);
-	struct page *new_page = malloc(sizeof(struct page));
-	memcpy(new_page, page, sizeof(struct page));
-	success = hash_insert(&dst->hash,&new_page->elem);
-	if (!success) return success;
+		struct page *page = hash_entry (hash_cur (&i), struct page, elem);
+		struct page *new_page = malloc(sizeof(struct page));
+		memcpy(new_page, page, sizeof(struct page));
+		success = hash_insert(&dst->hash,&new_page->elem);
+		if (!success) return success;
 	}
 	return success;
 }

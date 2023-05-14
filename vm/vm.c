@@ -203,9 +203,9 @@ vm_get_frame (void) {
 static void
 vm_stack_growth (void * addr){
 	struct thread* curr = thread_current();
-	uint64_t MAX_STACK = USER_STACK - 1<<20;
-	if (addr < curr->stack_floor && addr >= MAX_STACK){
-		int times = (curr->stack_floor - (uint64_t) addr) / PGSIZE +1;
+	void* max_stack = (void *)(USER_STACK - 1<<20);
+	if ( addr < curr->stack_floor && addr >= USER_STACK - 1 <<20){
+		int times = (curr->stack_floor - addr) / PGSIZE +1;
 		curr->stack_floor = addr - PGSIZE * times;
 	}
 }
@@ -242,7 +242,7 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 	struct page *page = NULL;
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
-	if (addr >= KERN_BASE) return false;
+	if ( (uintptr_t)addr >= KERN_BASE) return false;
 	if (write == true && page->writable == false) return false;
  
  	addr = pg_round_down(addr);

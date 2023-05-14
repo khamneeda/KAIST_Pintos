@@ -133,7 +133,7 @@ struct thread {
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */
 	struct supplemental_page_table spt;
-	uint8_t stack_floor;
+	void * stack_floor;
 #endif
 
 	/* Owned by thread.c. */

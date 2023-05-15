@@ -203,13 +203,16 @@ vm_get_frame (void) {
 static bool
 vm_stack_growth (void * addr){
 	struct thread* curr = thread_current();
-	void * margin = (void *) USER_STACK - addr;
-	if ( addr < curr->stack_floor && margin < 1 <<20){
-		int times = (curr->stack_floor - addr) / PGSIZE +1;
-		curr->stack_floor = curr->stack_floor - PGSIZE * times;
-		return true;
-	}
-	return false;
+    void * margin = (void *) USER_STACK - curr->stack_floor;
+    while (addr < curr->stack_floor && margin < 1<<20){
+        curr->stack_floor = curr->stack_floor - PGSIZE;
+        vm_alloc_page_with_initializer(VM_ANON, curr->stack_floor, 1, NULL, NULL);
+        margin = (void*) USER_STACK - curr->stack_floor;
+        //printf("GROW\n");
+    }
+    if (margin < 1 <<20 && addr >= thread_current()->stack_floor) return true;
+    //printf("\nFAIL\n");
+    return false;
 }
 
 /* Handle the fault on write_protected page */
@@ -245,16 +248,17 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
 	if ( is_kernel_vaddr(addr)) return false;
-	if (write == true && page->writable == false) return false;
- 
+	
  	addr = pg_round_down(addr);
 	page = spt_find_page(spt, addr);
 	if (page == NULL) return false;
+	if (write == true && page->writable == false) return false;
 	//?? not_present는 왜 주어진거임?
 	bool succ = false;
 	if (not_present) {
 		if (vm_stack_growth(addr))
-			succ = vm_do_claim_page (page);
+			page = spt_find_page(spt, addr);
+		succ = vm_do_claim_page (page);
 	}
 	return succ;
 	
@@ -288,7 +292,7 @@ vm_install_page (void *upage, void *kpage, bool writable) {
 	/* Verify that there's not already a page at that virtual
 	 * address, then map our page there. */
 	return (pml4_get_page (t->pml4, upage) == NULL
-			&& pml4_set_page (t->pml4, upage, kpage, writable));
+			&& pml4_set_page (t->pml4, upage, kpage, writable));get_page (t->pml4, upage);
 }
 
 
@@ -354,6 +358,7 @@ void hash_free (struct hash_elem *e, void *aux){
 	//free(page->frame);
 	//struct frame은 free해줘도되나
 	//page안에 저장된 정보 *frame free또는 뭔가 업데이트
+	//??? pml4관련 뭔가 해야함
 }
 
 /* Free the resource hold by the supplemental page table */
@@ -361,6 +366,8 @@ void hash_free (struct hash_elem *e, void *aux){
 void
 supplemental_page_table_kill (struct supplemental_page_table *spt) {
 	/* TODO: Destroy all the supplemental_page_table hold by thread and
-	 * TODO: writeback all the modified contents to the storage. */
-	hash_destroy (&spt->hash, hash_free); 
+	 * TODO: writeback all the
+	  modified contents to the storage. */
+	//hash_destroy (&spt->hash, hash_free); 
+	//process_cleanup()에서 호출됨, 후에 pml4 destroy 부르는데 얘랑 충돌되지 않게 해야함) 
 }

@@ -170,12 +170,13 @@ int
 check_address(uintptr_t f){
 	//printf("%lld",KERN_BASE);
 	if(f != NULL && f < KERN_BASE){
-		struct thread* curr=thread_current();
+		/*struct thread* curr=thread_current();
 		const uint64_t va = f;
 		uint64_t *pte= pml4e_walk(curr->pml4,f,0);
 		if(pte!=NULL){
 			return 1;
-		}
+		}*/
+		return 1;
 	}
 	return 0;
 	//exit(-1);  

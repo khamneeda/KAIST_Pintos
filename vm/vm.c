@@ -43,7 +43,7 @@ page_get_type (struct page *page) {
 static struct frame *vm_get_victim (void);
 static bool vm_do_claim_page (struct page *page);
 static struct frame *vm_evict_frame (void);
-static void vm_stack_growth (void * addr);
+static bool vm_stack_growth (void * addr);
 
 /* Create the pending page object with initializer. If you want to create a
  * page, do not create it directly and make it through this function or
@@ -200,14 +200,16 @@ vm_get_frame (void) {
 /* This function checks whether the addr is valid.
  * Lower stack floor n times.
 */
-static void
+static bool
 vm_stack_growth (void * addr){
 	struct thread* curr = thread_current();
-	void * margin = USER_STACK - addr;
+	void * margin = (void *) USER_STACK - addr;
 	if ( addr < curr->stack_floor && margin < 1 <<20){
 		int times = (curr->stack_floor - addr) / PGSIZE +1;
 		curr->stack_floor = curr->stack_floor - PGSIZE * times;
+		return true;
 	}
+	return false;
 }
 
 /* Handle the fault on write_protected page */
@@ -251,8 +253,8 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 	//?? not_present는 왜 주어진거임?
 	bool succ = false;
 	if (not_present) {
-		vm_stack_growth(addr);
-		succ = vm_do_claim_page (page);
+		if (vm_stack_growth(addr))
+			succ = vm_do_claim_page (page);
 	}
 	return succ;
 	

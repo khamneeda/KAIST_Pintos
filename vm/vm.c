@@ -344,10 +344,12 @@ supplemental_page_table_copy (struct supplemental_page_table *dst,
 	while (hash_next (&i))
 	{
 		struct page *page = hash_entry (hash_cur (&i), struct page, elem);
+		//if(page==NULL){break;}
 		struct page *new_page = malloc(sizeof(struct page));
+		if(new_page==NULL) return false;
 		memcpy(new_page, page, sizeof(struct page));
-		success = hash_insert(&dst->hash,&new_page->elem);
-		if (!success) return success;
+		struct hash_elem* already_exist = hash_insert(&dst->hash,&new_page->elem);
+		if (already_exist) return false;
 	}
 	return success;
 }

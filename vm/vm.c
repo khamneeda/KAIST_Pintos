@@ -203,17 +203,57 @@ vm_get_frame (void) {
 */
 static bool
 vm_stack_growth (void * addr){
+	/*
 	struct thread* curr = thread_current();
-    void * margin = (void *) USER_STACK - curr->stack_floor;
-    while (addr < curr->stack_floor && margin < 1<<20){
-        curr->stack_floor = curr->stack_floor - PGSIZE;
-        vm_alloc_page_with_initializer(VM_ANON, curr->stack_floor, 1, NULL, NULL);
-        margin = (void*) USER_STACK - curr->stack_floor;
-        //printf("GROW\n");
-    }
-    if (margin < 1 <<20 && addr >= thread_current()->stack_floor) return true;
-    //printf("\nFAIL\n");
-    return false;
+	void * stack_floor = curr->stack_floor;
+    void * margin = (void *) USER_STACK - stack_floor;
+
+	if (((void*) USER_STACK - addr) < (1<<20) && addr < stack_floor){
+		while (addr < stack_floor && margin < 1<<20){
+			stack_floor = stack_floor - PGSIZE;
+			vm_alloc_page_with_initializer(VM_ANON, stack_floor, 1, NULL, NULL);
+			margin = (void*) USER_STACK - stack_floor;
+			//printf("GROW\n");
+		}
+		if (margin < 1 <<20 && addr >= stack_floor) {
+			curr->stack_floor = stack_floor;
+			return true;
+		}
+	}
+	else return false;
+	NOT_REACHED();
+	*/
+
+
+// 지금 이 코드로 수정중, grow-bad에서 마지막에 false가 리턴됨
+// pt-grow-bad에서 마지막에 4747e000참조, stack_floor은 4747f000
+	void * stack_floor = thread_current()->stack_floor;
+	//if (addr > limit - 1) {
+		while (addr < stack_floor && (void *) USER_STACK - stack_floor < 1<<20){
+			stack_floor = stack_floor - PGSIZE;
+			vm_alloc_page_with_initializer(VM_ANON, stack_floor, 1, NULL, NULL);
+		}
+		//const int limit = USER_STACK - (1<<20);
+		//일단 위는 다 통과하고 여기에서 fail만 잘 띄워주면 될거같은데 bad에서는
+		if (USER_STACK - (1<<20) >= stack_floor && addr >= stack_floor) {
+			thread_current()->stack_floor = stack_floor;
+			return true;
+		}
+		return false;
+	//}
+
+/*
+	void* stack_floor = thread_current()->stack_floor;
+	void* stack_bottom = (void*) USER_STACK - (void*) 1<<20;
+	if (((void*) USER_STACK - addr) < (1<<20) && addr < stack_floor){
+		while (addr < stack_floor && (void *) USER_STACK - stack_floor < 1<<20)
+			stack_floor -= PGSIZE;
+			vm_alloc_page_with_initializer(VM_ANON, stack_floor, 1, NULL, NULL);
+		thread_current()->stack_floor = stack_floor;
+		return true;
+	}
+	return false;
+*/
 }
 
 /* Handle the fault on write_protected page */

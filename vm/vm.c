@@ -76,6 +76,7 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 
 		uninit_new (page, upage, init, type, aux, initializer);
 		page->writable = writable;
+		page->init = init;
 		
 		bool success = spt_insert_page(spt, page);
 		if (success) return true;
@@ -344,12 +345,29 @@ supplemental_page_table_copy (struct supplemental_page_table *dst,
 	while (hash_next (&i))
 	{
 		struct page *page = hash_entry (hash_cur (&i), struct page, elem);
-		//if(page==NULL){break;}
-		struct page *new_page = malloc(sizeof(struct page));
-		if(new_page==NULL) return false;
-		memcpy(new_page, page, sizeof(struct page));
-		struct hash_elem* already_exist = hash_insert(&dst->hash,&new_page->elem);
-		if (already_exist) return false;
+		int ty = VM_TYPE (page->operations->type);
+		struct lazy_args_set * aux=NULL;
+		switch (ty) {
+		case VM_UNINIT:
+			if(page->uninit.aux){
+				aux = malloc(sizeof(struct lazy_args_set));
+				memcpy(aux,page->uninit.aux,sizeof(struct lazy_args_set));
+			}
+			if(!vm_alloc_page_with_initializer(page->uninit.type,page->va,page->writable,page->init,aux))
+				return false;
+		case VM_ANON:
+			if(page->anon.aux){
+				aux = malloc(sizeof(struct lazy_args_set));
+				memcpy(aux,page->anon.aux,sizeof(struct lazy_args_set));
+			}
+			if(!vm_alloc_page_with_initializer(VM_ANON,page->va,page->writable,page->init,aux))
+				if(!vm_claim_page(page->va)){
+					return false;
+			}
+		case VM_FILE:
+			vm_alloc_page_with_initializer(VM_FILE,page->va,page->writable,page->init,aux);
+			//구현 더 필요함
+		}
 	}
 	return success;
 }

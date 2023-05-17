@@ -38,6 +38,7 @@ struct page_operations;
 struct thread;
 
 #define VM_TYPE(type) ((type) & 7)
+typedef bool vm_initializer (struct page *, void *aux);
 
 /* The representation of "page".
  * This is kind of "parent class", which has four "child class"es, which are
@@ -51,6 +52,7 @@ struct page {
 	/* Your implementation */
 	struct hash_elem elem;
 	bool writable;
+	vm_initializer *init;
 
 	/* Per-type data are binded into the union.
 	 * Each function automatically detects the current union */
@@ -93,6 +95,17 @@ struct page_operations {
 struct supplemental_page_table {
 	struct hash hash;
 };
+
+
+struct lazy_args_set{
+	struct file *file;
+	off_t ofs;
+	size_t read_bytes;
+	size_t zero_bytes;
+	size_t page_read_bytes;
+	size_t page_zero_bytes;
+};
+
 
 #include "threads/thread.h"
 void supplemental_page_table_init (struct supplemental_page_table *spt);

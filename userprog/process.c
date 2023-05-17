@@ -180,6 +180,7 @@ __do_fork (void ** aux) {
 	supplemental_page_table_init (&curr->spt);
 	if (!supplemental_page_table_copy (&curr->spt, &parent->spt))
 		goto error;
+	curr->stack_floor=USER_STACK;
 #else
 	if (!pml4_for_each (parent->pml4, duplicate_pte, parent))
 		goto error;
@@ -810,15 +811,6 @@ install_page (void *upage, void *kpage, bool writable) {
 /* From here, codes will be used after project 3.
  * If you want to implement the function for only project 2, implement it on the
  * upper block. */
-
-struct lazy_args_set{
-	struct file *file;
-	off_t ofs;
-	size_t read_bytes;
-	size_t zero_bytes;
-	size_t page_read_bytes;
-	size_t page_zero_bytes;
-};
 
 static bool
 lazy_load_segment (struct page *page, void *aux) {

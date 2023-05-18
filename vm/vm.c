@@ -43,7 +43,7 @@ page_get_type (struct page *page) {
 static struct frame *vm_get_victim (void);
 static bool vm_do_claim_page (struct page *page);
 static struct frame *vm_evict_frame (void);
-static bool vm_stack_growth (void * addr);
+static bool vm_stack_growth (void * addr, void* rsp);
 
 /* Create the pending page object with initializer. If you want to create a
  * page, do not create it directly and make it through this function or
@@ -202,7 +202,7 @@ vm_get_frame (void) {
  * Lower stack floor n times.
 */
 static bool
-vm_stack_growth (void * addr){
+vm_stack_growth (void * addr, void* rsp){
 	/*
 	struct thread* curr = thread_current();
 	void * stack_floor = curr->stack_floor;
@@ -224,36 +224,39 @@ vm_stack_growth (void * addr){
 	NOT_REACHED();
 	*/
 
-
-// 지금 이 코드로 수정중, grow-bad에서 마지막에 false가 리턴됨
+/*
+// grow-bad에서 마지막에 false가 리턴됨
 // pt-grow-bad에서 마지막에 4747e000참조, stack_floor은 4747f000
 	void * stack_floor = thread_current()->stack_floor;
 	//if (addr > limit - 1) {
-		while (addr < stack_floor && (void *) USER_STACK - stack_floor < 1<<20){
+		while (addr < stack_floor && USER_STACK - 1<<20 <= stack_floor && addr >= rsp-8){
 			stack_floor = stack_floor - PGSIZE;
 			vm_alloc_page_with_initializer(VM_ANON, stack_floor, 1, NULL, NULL);
 		}
 		//const int limit = USER_STACK - (1<<20);
 		//일단 위는 다 통과하고 여기에서 fail만 잘 띄워주면 될거같은데 bad에서는
-		if (USER_STACK - (1<<20) >= stack_floor && addr >= stack_floor) {
+		if (addr <= stack_floor && USER_STACK - 1<<20 <= stack_floor && addr >= rsp-8) {
 			thread_current()->stack_floor = stack_floor;
 			return true;
 		}
 		return false;
 	//}
+*/
 
-/*
+
+	bool conda = addr >= USER_STACK - 1<<20;
 	void* stack_floor = thread_current()->stack_floor;
-	void* stack_bottom = (void*) USER_STACK - (void*) 1<<20;
-	if (((void*) USER_STACK - addr) < (1<<20) && addr < stack_floor){
-		while (addr < stack_floor && (void *) USER_STACK - stack_floor < 1<<20)
+	if ((addr >= USER_STACK - 1<<20) && addr < stack_floor && addr >= rsp-8){
+		while (addr < stack_floor) //&& USER_STACK - 1<<20 < stack_floor)
 			stack_floor -= PGSIZE;
 			vm_alloc_page_with_initializer(VM_ANON, stack_floor, 1, NULL, NULL);
 		thread_current()->stack_floor = stack_floor;
 		return true;
 	}
 	return false;
-*/
+
+
+
 }
 
 /* Handle the fault on write_protected page */
@@ -294,14 +297,23 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 	page = spt_find_page(spt, addr);
 	if (page == NULL) return false;
 	if (write == true && page->writable == false) return false;
+
+	//Get the user programs rsp
+	void* rsp;
+	if (is_kernel_vaddr(f->rsp)) rsp = thread_current()->user_rsp;
+	else rsp = f->rsp; 
+
 	//?? not_present는 왜 주어진거임?
-	bool succ = false;
 	if (not_present) {
-		if (vm_stack_growth(addr))
-			page = spt_find_page(spt, addr);
-		succ = vm_do_claim_page (page);
+		// if (!vm_do_claim_page(page)){
+		// 	return vm_stack_growth(addr, rsp);
+		// }
+		// else return true;
+		vm_stack_growth(addr, rsp);
+		page = spt_find_page(spt, addr); //unnecessary?
+		return vm_do_claim_page (page);
 	}
-	return succ;
+	return false;
 	
 	//if (succ) succ = uninit_initialize (page, page->frame->kva);
 	// 이거 수정해야할듯? 이미 page_claim했으니 처리

@@ -247,6 +247,7 @@ vm_stack_growth (void * addr){
 	//현재 코드는 false일때 stack growth가 실패했다는 의미가 아니라 false일 때 try_handle_fault가 실패하도록 설정해놓은 거임
 	//flexible하게 수정하면 될듯
 
+/*
 	struct thread* curr = thread_current();
 	bool success=true;
     while (addr < curr->stack_floor){
@@ -256,6 +257,11 @@ vm_stack_growth (void * addr){
         //printf("GROW\n");
     }
     return success;
+*/
+
+	thread_current()->stack_floor = thread_current()->stack_floor - PGSIZE;
+	vm_alloc_page_with_initializer(VM_ANON, thread_current()->stack_floor, 1, NULL, NULL);
+	return true;
 
 
 
@@ -315,17 +321,35 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
  	addr = pg_round_down(addr);
 	//?? not_present는 왜 주어진거임?
 
-	bool succ = false;
+	//Get the user programs rsp
+	void* rsp;
+	if (is_kernel_vaddr(f->rsp)) rsp = thread_current()->user_rsp;
+	else rsp = f->rsp; 
 
+	bool succ = false;
 	void * margin = (void *) USER_STACK - addr;
 	if(margin <= 1<<20) succ=true;
 
 
 	//1MB보다 작으면 stack 증가 시도 및 오류없는지 확인
 	//크면 spt find~해서 do_claim
+	if (write == true && page->writable == false) return false;
+	return succ;
 		
 	//?? not_present는 왜 주어진거임?
 	if (not_present) {
+		/* 새로짠코드 -->죄다 fail함
+		if (succ && addr < thread_current()->stack_floor && addr >= rsp-8){
+			vm_stack_growth(addr);
+		}
+		page = spt_find_page(spt, addr);
+		if (page == NULL) return false;
+	
+		succ = vm_do_claim_page (page);
+		return succ;
+		*/
+		
+		// 원래있던코드
 		if (succ)
 			if(!vm_stack_growth(addr)){
 				return false;
@@ -333,9 +357,8 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 		page = spt_find_page(spt, addr);
 		if (page == NULL) return false;
 		succ = vm_do_claim_page (page);
+		
 	}
-	if (write == true && page->writable == false) return false;
-	return succ;
 	
 	//if (succ) succ = uninit_initialize (page, page->frame->kva);
 	// 이거 수정해야할듯? 이미 page_claim했으니 처리

@@ -227,7 +227,7 @@ vm_stack_growth (void * addr){
 
 // 지금 이 코드로 수정중, grow-bad에서 마지막에 false가 리턴됨
 // pt-grow-bad에서 마지막에 4747e000참조, stack_floor은 4747f000
-	void * stack_floor = thread_current()->stack_floor;
+/*	void * stack_floor = thread_current()->stack_floor;
 	//if (addr > limit - 1) {
 		while (addr < stack_floor && (void *) USER_STACK - stack_floor < 1<<20){
 			stack_floor = stack_floor - PGSIZE;
@@ -240,7 +240,22 @@ vm_stack_growth (void * addr){
 			return true;
 		}
 		return false;
-	//}
+	//}*/
+
+	//margin 확인하는 코드를 vm_try_handle_fault로 이동해서 일단 fork가 패스되도록 했음
+	//아래 짠 코드는 무조건 true 리턴함
+	//현재 코드는 false일때 stack growth가 실패했다는 의미가 아니라 false일 때 try_handle_fault가 실패하도록 설정해놓은 거임
+	//flexible하게 수정하면 될듯
+
+	struct thread* curr = thread_current();
+	bool success=true;
+    while (addr < curr->stack_floor){
+        curr->stack_floor = curr->stack_floor - PGSIZE;
+        vm_alloc_page_with_initializer(VM_ANON, curr->stack_floor, 1, NULL, NULL);
+		success=true;
+        //printf("GROW\n");
+    }
+    return success;
 
 /*
 	void* stack_floor = thread_current()->stack_floor;
@@ -291,16 +306,28 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 	if ( is_kernel_vaddr(addr)) return false;
 	
  	addr = pg_round_down(addr);
-	page = spt_find_page(spt, addr);
-	if (page == NULL) return false;
-	if (write == true && page->writable == false) return false;
 	//?? not_present는 왜 주어진거임?
+
 	bool succ = false;
+
+	void * margin = (void *) USER_STACK - addr;
+	if(margin <= 1<<20) succ=true;
+
+
+	//1MB보다 작으면 stack 증가 시도 및 오류없는지 확인
+	//크면 spt find~해서 do_claim
+		
+	//?? not_present는 왜 주어진거임?
 	if (not_present) {
-		if (vm_stack_growth(addr))
-			page = spt_find_page(spt, addr);
+		if (succ)
+			if(!vm_stack_growth(addr)){
+				return false;
+			}
+		page = spt_find_page(spt, addr);
+		if (page == NULL) return false;
 		succ = vm_do_claim_page (page);
 	}
+	if (write == true && page->writable == false) return false;
 	return succ;
 	
 	//if (succ) succ = uninit_initialize (page, page->frame->kva);
@@ -387,24 +414,25 @@ supplemental_page_table_copy (struct supplemental_page_table *dst,
 		struct page *page = hash_entry (hash_cur (&i), struct page, elem);
 		int ty = VM_TYPE (page->operations->type);
 		struct lazy_args_set * aux=NULL;
-		switch (ty) {
-		case VM_UNINIT:
+		if (ty==VM_UNINIT) {
 			if(page->uninit.aux){
 				aux = malloc(sizeof(struct lazy_args_set));
 				memcpy(aux,page->uninit.aux,sizeof(struct lazy_args_set));
 			}
 			if(!vm_alloc_page_with_initializer(page->uninit.type,page->va,page->writable,page->init,aux))
 				return false;
-		case VM_ANON:
+		}
+		else if(ty==VM_ANON){
 			if(page->anon.aux){
 				aux = malloc(sizeof(struct lazy_args_set));
 				memcpy(aux,page->anon.aux,sizeof(struct lazy_args_set));
 			}
-			if(!vm_alloc_page_with_initializer(VM_ANON,page->va,page->writable,page->init,aux))
-				if(!vm_claim_page(page->va)){
-					return false;
-			}
-		case VM_FILE:
+			if(!vm_alloc_page_with_initializer(VM_ANON,page->va,page->writable,page->init,aux)) return false;
+			struct page* child_page = spt_find_page(dst,page->va);
+			if(!vm_do_claim_page(child_page)){ return false;}
+			memcpy(child_page->frame->kva, page->frame->kva, PGSIZE);
+		}
+		else if(ty==VM_FILE){
 			vm_alloc_page_with_initializer(VM_FILE,page->va,page->writable,page->init,aux);
 			//구현 더 필요함
 		}
@@ -424,10 +452,11 @@ void hash_free (struct hash_elem *e, void *aux){
 /* Free the resource hold by the supplemental page table */
 /* This function also free frames linked to pages*/
 void
-supplemental_page_table_kill (struct supplemental_page_table *spt) {
+supplemental_page_table_kill (struct supplemental_page_table *spt UNUSED) {
 	/* TODO: Destroy all the supplemental_page_table hold by thread and
 	 * TODO: writeback all the
 	  modified contents to the storage. */
 	//hash_destroy (&spt->hash, hash_free); 
 	//process_cleanup()에서 호출됨, 후에 pml4 destroy 부르는데 얘랑 충돌되지 않게 해야함) 
+	return;
 }

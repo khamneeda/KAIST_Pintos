@@ -224,36 +224,40 @@ vm_stack_growth (void * addr, void* rsp){
 	NOT_REACHED();
 	*/
 
-/*
+// stack_growth말고 다른거 수정할거면 이 코드로 하기: grow-stack에서 이코드는 오류 안남
 // grow-bad에서 마지막에 false가 리턴됨
 // pt-grow-bad에서 마지막에 4747e000참조, stack_floor은 4747f000
 	void * stack_floor = thread_current()->stack_floor;
 	//if (addr > limit - 1) {
-		while (addr < stack_floor && USER_STACK - 1<<20 <= stack_floor && addr >= rsp-8){
+		while (addr < stack_floor && (void *) USER_STACK - stack_floor < 1<<20){ //addr >= rsp-8){
 			stack_floor = stack_floor - PGSIZE;
 			vm_alloc_page_with_initializer(VM_ANON, stack_floor, 1, NULL, NULL);
 		}
 		//const int limit = USER_STACK - (1<<20);
 		//일단 위는 다 통과하고 여기에서 fail만 잘 띄워주면 될거같은데 bad에서는
-		if (addr <= stack_floor && USER_STACK - 1<<20 <= stack_floor && addr >= rsp-8) {
+		if (USER_STACK - (1<<20) >= stack_floor && addr >= stack_floor) { //addr >= rsp-8){
 			thread_current()->stack_floor = stack_floor;
 			return true;
 		}
 		return false;
 	//}
-*/
 
 
+
+/*
+
+//이 함수 고칠때는 이걸로
 	bool conda = addr >= USER_STACK - 1<<20;
 	void* stack_floor = thread_current()->stack_floor;
-	if ((addr >= USER_STACK - 1<<20) && addr < stack_floor && addr >= rsp-8){
-		while (addr < stack_floor) //&& USER_STACK - 1<<20 < stack_floor)
+	if (addr >= USER_STACK - 1<<20 && addr < stack_floor && addr >= rsp-8){
+		while (addr < stack_floor && (void *) USER_STACK - stack_floor < 1<<20) //&& USER_STACK - 1<<20 < stack_floor)
 			stack_floor -= PGSIZE;
 			vm_alloc_page_with_initializer(VM_ANON, stack_floor, 1, NULL, NULL);
 		thread_current()->stack_floor = stack_floor;
 		return true;
 	}
 	return false;
+*/
 
 
 
@@ -310,7 +314,7 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 		// }
 		// else return true;
 		vm_stack_growth(addr, rsp);
-		page = spt_find_page(spt, addr); //unnecessary?
+			//page = spt_find_page(spt, addr); //necessary?
 		return vm_do_claim_page (page);
 	}
 	return false;

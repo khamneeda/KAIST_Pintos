@@ -133,7 +133,8 @@ struct thread {
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */
 	struct supplemental_page_table spt;
-	void * stack_floor;
+	void* stack_floor;					/* Current stack floor to determine 1MB */
+	void* user_rsp;						/* User program's rsp storage when kernel faulted */
 #endif
 
 	/* Owned by thread.c. */

@@ -5,6 +5,7 @@
 #include "vm/inspect.h"
 
 #include "vm/uninit.h"
+#include <intrinsic.h>
 
 
 struct list frame_table;
@@ -43,7 +44,7 @@ page_get_type (struct page *page) {
 static struct frame *vm_get_victim (void);
 static bool vm_do_claim_page (struct page *page);
 static struct frame *vm_evict_frame (void);
-static bool vm_stack_growth (void * addr);
+static bool vm_stack_growth (void * addr, void* rsp);
 
 /* Create the pending page object with initializer. If you want to create a
  * page, do not create it directly and make it through this function or
@@ -202,7 +203,7 @@ vm_get_frame (void) {
  * Lower stack floor n times.
 */
 static bool
-vm_stack_growth (void * addr){
+vm_stack_growth (void * addr, void* rsp){
 	/*
 	struct thread* curr = thread_current();
 	void * stack_floor = curr->stack_floor;
@@ -259,11 +260,14 @@ vm_stack_growth (void * addr){
     return success;
 */
 
-	thread_current()->stack_floor = thread_current()->stack_floor - PGSIZE;
-	vm_alloc_page_with_initializer(VM_ANON, thread_current()->stack_floor, 1, NULL, NULL);
-	return true;
-
-
+	struct thread* curr = thread_current();
+	if(addr >= curr->stack_floor) return true;
+	if((uintptr_t)(rsp-addr) >=4096) return false;
+    while (addr < curr->stack_floor){
+        curr->stack_floor = curr->stack_floor - PGSIZE;
+        vm_alloc_page_with_initializer(VM_ANON, curr->stack_floor, 1, NULL, NULL);
+    }
+    return true;
 
 /*
 
@@ -316,7 +320,7 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 	struct page *page = NULL;
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
-	if ( is_kernel_vaddr(addr)) return false;
+	if (is_kernel_vaddr(addr)) return false;
 	
  	addr = pg_round_down(addr);
 	//?? not_present는 왜 주어진거임?
@@ -333,25 +337,12 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 
 	//1MB보다 작으면 stack 증가 시도 및 오류없는지 확인
 	//크면 spt find~해서 do_claim
-	if (write == true && page->writable == false) return false;
-	return succ;
 		
 	//?? not_present는 왜 주어진거임?
 	if (not_present) {
-		/* 새로짠코드 -->죄다 fail함
-		if (succ && addr < thread_current()->stack_floor && addr >= rsp-8){
-			vm_stack_growth(addr);
-		}
-		page = spt_find_page(spt, addr);
-		if (page == NULL) return false;
-	
-		succ = vm_do_claim_page (page);
-		return succ;
-		*/
-		
 		// 원래있던코드
 		if (succ)
-			if(!vm_stack_growth(addr)){
+			if(!vm_stack_growth(addr,rsp)){
 				return false;
 			}
 		page = spt_find_page(spt, addr);
@@ -359,6 +350,8 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 		succ = vm_do_claim_page (page);
 		
 	}
+	if (write == true && page->writable == false) return false;
+	return succ;
 	
 	//if (succ) succ = uninit_initialize (page, page->frame->kva);
 	// 이거 수정해야할듯? 이미 page_claim했으니 처리

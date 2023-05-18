@@ -143,7 +143,7 @@ page_fault (struct intr_frame *f) {
 
 #ifdef VM
 	/* For project 3 and later. */
-	thread_current()->user_rsp = f->rsp;
+	thread_current()->user_rsp = rrsp();
 	if (vm_try_handle_fault (f, fault_addr, user, write, not_present))
 		return;
 #endif

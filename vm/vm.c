@@ -44,7 +44,7 @@ page_get_type (struct page *page) {
 static struct frame *vm_get_victim (void);
 static bool vm_do_claim_page (struct page *page);
 static struct frame *vm_evict_frame (void);
-static bool vm_stack_growth (void * addr, void* rsp);
+static bool vm_stack_growth (void * addr);
 
 /* Create the pending page object with initializer. If you want to create a
  * page, do not create it directly and make it through this function or
@@ -203,7 +203,7 @@ vm_get_frame (void) {
  * Lower stack floor n times.
 */
 static bool
-vm_stack_growth (void * addr, void* rsp){
+vm_stack_growth (void * addr){
 	/*
 	struct thread* curr = thread_current();
 	void * stack_floor = curr->stack_floor;
@@ -262,7 +262,6 @@ vm_stack_growth (void * addr, void* rsp){
 
 	struct thread* curr = thread_current();
 	if(addr >= curr->stack_floor) return true;
-	if((uintptr_t)(rsp-addr) >=4096) return false;
     while (addr < curr->stack_floor){
         curr->stack_floor = curr->stack_floor - PGSIZE;
         vm_alloc_page_with_initializer(VM_ANON, curr->stack_floor, 1, NULL, NULL);
@@ -321,7 +320,7 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
 	if (is_kernel_vaddr(addr)) return false;
-	
+	void* original_addr=addr;
  	addr = pg_round_down(addr);
 	//?? not_present는 왜 주어진거임?
 
@@ -341,14 +340,19 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 	//?? not_present는 왜 주어진거임?
 	if (not_present) {
 		// 원래있던코드
-		if (succ)
-			if(!vm_stack_growth(addr,rsp)){
-				return false;
-			}
+		page = spt_find_page(spt, addr);
+		if (page != NULL) {
+			bool success= vm_do_claim_page (page);
+			if (write == true && page->writable == false) return false;
+			return success;
+		}
+		if (succ){
+			if((rsp-original_addr) >8) return false;
+			vm_stack_growth(addr);
+		}
 		page = spt_find_page(spt, addr);
 		if (page == NULL) return false;
 		succ = vm_do_claim_page (page);
-		
 	}
 	if (write == true && page->writable == false) return false;
 	return succ;

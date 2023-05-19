@@ -6,6 +6,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "threads/interrupt.h"
+
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -14,7 +15,7 @@
 struct mmap_info {
 	void* addr;
 	size_t length;
-	list_elem elem;
+	struct list_elem elem;
 	int fd;
 };
 

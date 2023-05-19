@@ -13,7 +13,7 @@
 #include "filesys/file.h"
 
 #include "include/lib/string.h"
-#include "vm.h"
+#include "vm/vm.h"
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -31,7 +31,9 @@ int64_t sys_open (uint64_t*);
 int64_t sys_filesize (uint64_t* );
 int64_t sys_read (uint64_t*);
 int64_t sys_write (uint64_t* );
+int64_t sys_mmap (uint64_t* );
 void sys_seek (uint64_t*);
+void sys_munmap (uint64_t*);
 int64_t sys_tell (uint64_t*);
 void sys_close (uint64_t*);
 struct file* get_file(int);
@@ -149,7 +151,7 @@ syscall_handler (struct intr_frame *f) {
 			f->R.rax = update;
 			break;
 		case SYS_MUNMAP:
-			sys_munmap(args):
+			sys_munmap(args);
 			break;
 
 		/* For project2 Extra*/		
@@ -435,8 +437,7 @@ get_file(int fd){
 	struct file* file = thread_current()->fd_table[fd];
 	return file;
 }
-
-void*
+int64_t
 sys_mmap(uint64_t* args) {
 	//argument obtaining
 	void* addr = (void*) args[1];
@@ -446,13 +447,13 @@ sys_mmap(uint64_t* args) {
 	off_t offset = (off_t) args[5];
 
 	//check conditions
-	if (!check_address(addr)) return NULL;
+	if (!check_address(addr)) return 0;
 
 	// Check alligned addr
-	if (addr % PGSIZE != 0) return NULL;
+	if ((uintptr_t) addr % PGSIZE != 0) return 0;
 
 	// Check length != 0
-	if (length == 0) return NULL;
+	if (length == 0) return 0;
 
 	// Check addr is already used
 	for (int i = 0; i < length / PGSIZE +1; i++){
@@ -466,9 +467,9 @@ sys_mmap(uint64_t* args) {
 		mmap_info->addr = addr;
 		mmap_info->length = length;
 		mmap_info->fd = fd;
-		return valid_addr;
+		return (int64_t) valid_addr;
 	}
-	return NULL;
+	return 0;
 }
 
 void

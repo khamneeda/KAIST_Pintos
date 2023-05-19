@@ -51,7 +51,15 @@ file_backed_swap_out (struct page *page) {
 /* Destory the file backed page. PAGE will be freed by the caller. */
 static void
 file_backed_destroy (struct page *page) {
-	struct file_page *file_page UNUSED = &page->file;
+	struct file_page *file_page = &page->file;
+
+	//palloc_free_page(page->frame->kva);
+	list_remove(&page->frame->elem);
+	free(page->frame);
+	
+	free(file_page->aux);
+	memset(file_page, 0, sizeof(struct file_page));
+	struct hash_elem* e = hash_delete(&thread_current()->spt.hash, &page->elem);
 }
 
 /* Do the mmap */
@@ -120,27 +128,36 @@ do_munmap (void *addr) {
 	//find information about the file
 	struct thread* curr = thread_current();
 	size_t length;
+	int fd;
 	if(!list_empty(&curr->mmap_info_list)){
 		for (struct list_elem* c = list_front(&curr->mmap_info_list); c != list_end(&curr->mmap_info_list); ){
 			struct mmap_info* mmap_info = list_entry(c, struct mmap_info, elem);
 			c = c->next;
 			if (mmap_info->addr == addr) {
 				length = mmap_info->length;
+				fd= mmap_info->length;
 				break;
 			}
 		}
 	}
 
+	size_t write_bytes = PGSIZE;
 	// Dirty check
 	for (int i = 0; i <(length / PGSIZE) +1; i++){
 		void* pgaddr = addr + i * PGSIZE;
 		struct page* page = spt_find_page(&curr->spt, pgaddr);
-		
+		struct file* file= curr->fd_table[fd];
+
+		if (i==(length / PGSIZE)) write_bytes = length % PGSIZE; 
 		if (pml4_is_dirty(curr->pml4, pgaddr)){
-
-		}
-
-	}
-
+			if((file_write (file, pgaddr,write_bytes)!= write_bytes)){
+				// some error...
+			}
+		
 	// Decoupling addr with frame
+		pml4_clear_page(curr->pml4, pgaddr);
+		palloc_free_page(page->frame->kva);
+		vm_dealloc_page (page);
+		}
+	}
 }

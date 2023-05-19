@@ -14,6 +14,8 @@ static const struct page_operations file_ops = {
 	.type = VM_FILE,
 };
 
+static bool lazy_load_segment_file (struct page *page, void *aux);
+
 /* The initializer of file vm */
 void
 vm_file_init (void) {
@@ -55,8 +57,62 @@ file_backed_destroy (struct page *page) {
 /* Do the mmap */
 void *
 do_mmap (void *addr, size_t length, int writable,
-		struct file *file, off_t offset) {
+		struct file *file, off_t ofs) {
+	uint8_t *upage = addr;
+	uint32_t read_bytes = length;
+	uint32_t zero_bytes;
+
+	if (read_bytes % PGSIZE) zero_bytes = PGSIZE - (read_bytes % PGSIZE);
+
+	while (read_bytes > 0 || zero_bytes > 0) {
+		size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
+		size_t page_zero_bytes = PGSIZE - page_read_bytes;
+
+		/* TODO: Set up aux to pass information to the lazy_load_segment. */
+		void *aux = NULL;
+		struct lazy_args_set *aux_set = malloc(sizeof(struct lazy_args_set)); //??
+		aux_set->file=file;
+		aux_set->ofs=ofs;
+		aux_set->read_bytes=read_bytes;
+		aux_set->zero_bytes=zero_bytes;
+		aux_set->page_read_bytes=page_read_bytes;
+		aux_set->page_zero_bytes=page_zero_bytes;
+
+		aux= (void *) aux_set;
+
+		if (!vm_alloc_page_with_initializer (VM_FILE, upage,
+					writable, lazy_load_segment_file, aux))
+			return NULL;
+
+		/* Advance. */
+		read_bytes -= page_read_bytes;
+		zero_bytes -= page_zero_bytes;
+		upage += PGSIZE;
+	
+		ofs += page_read_bytes;
+	}
+	return addr;
+
 }
+
+static bool
+lazy_load_segment_file (struct page *page, void *aux) {
+	struct lazy_args_set* aux_set = (struct lazy_args_set*) aux;
+	struct file* file = aux_set->file;
+	size_t page_read_bytes= aux_set->page_read_bytes;
+	size_t page_zero_bytes= aux_set->page_zero_bytes;
+	void* kpage=page->frame->kva;
+
+	file_seek(file, aux_set->ofs);
+
+	if (file_read(file, kpage, page_read_bytes) != (int) page_read_bytes){
+		return false;
+	}
+	memset(kpage + page_read_bytes, 0, page_zero_bytes);
+
+	return true;
+}
+
 
 /* Do the munmap */
 void

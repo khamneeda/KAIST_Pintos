@@ -13,6 +13,7 @@
 #include "filesys/file.h"
 
 #include "include/lib/string.h"
+#include "vm.h"
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -143,15 +144,19 @@ syscall_handler (struct intr_frame *f) {
 		case SYS_CLOSE:
 			sys_close(args);
 			break;		
+		case SYS_MMAP:
+			update = sys_mmap(args);
+			f->R.rax = update;
+			break;
+		case SYS_MUNMAP:
+			sys_munmap(args):
+			break;
 
 		/* For project2 Extra*/		
 		// case SYS_MOUNT
 		// case SYS_UMOUNT
 
-
 		/* For project 3, 4 each
-		SYS_MMAP
-		SYS_MUNMAP
 
 		SYS_CHDIR
 		SYS_MKDIR
@@ -429,4 +434,36 @@ get_file(int fd){
 	ASSERT (thread_current()->num_of_fd != FD_TABLE_SIZE);
 	struct file* file = thread_current()->fd_table[fd];
 	return file;
+}
+
+void*
+sys_mmap(uint64_t* args) {
+	//argument obtaining
+	void* addr = (void*) args[1];
+	size_t length = (size_t) args[2];
+	int writable = (int) args[3];
+	int fd = (int) args[4];
+	off_t offset = (off_t) args[5];
+
+	//check conditions
+	if (!check_address(addr)) return NULL;
+
+	// Check alligned addr
+	if (addr % PGSIZE != 0) return NULL;
+
+	// Check length != 0
+	if (length == 0) return NULL;
+
+	// Check addr is already used
+	for (int i = 0; i < length / PGSIZE +1; i++){
+		if ((spt_find_page(&thread_current()->spt, addr + PGSIZE*i)) !=NULL) return NULL;
+	}
+
+	return do_mmap(addr, length, writable, fd, offset);
+}
+
+void
+sys_munmap(uint64_t* args) {
+	void* addr = (void*) args[1];
+
 }

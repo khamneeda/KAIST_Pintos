@@ -11,6 +11,13 @@
 #endif
 
 
+struct mmap_info {
+	void* addr;
+	size_t length;
+	list_elem elem;
+	int fd;
+};
+
 
 /* States in a thread's life cycle. */
 enum thread_status {
@@ -135,6 +142,8 @@ struct thread {
 	struct supplemental_page_table spt;
 	void* stack_floor;					/* Current stack floor to determine 1MB */
 	void* user_rsp;						/* User program's rsp storage when kernel faulted */
+
+	struct list mmap_info_list;			/* Information about file in mmap, munmap */
 #endif
 
 	/* Owned by thread.c. */

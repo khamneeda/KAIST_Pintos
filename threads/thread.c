@@ -138,6 +138,7 @@ thread_init (void) {
 	list_init (&total_list);
 	list_init (&destruction_req);
 
+
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread ();
 	init_thread (initial_thread, "main", PRI_DEFAULT);
@@ -624,6 +625,11 @@ init_thread (struct thread *t, const char *name, int priority) {
 	//memset(t->fd_table, 0, PGSIZE);
 	// t->fd_table = {0, }; // Memory allocation?
 	t->num_of_fd = 2;
+
+#endif
+
+#ifdef VM
+	list_init (&t->mmap_info_list);
 
 #endif
 

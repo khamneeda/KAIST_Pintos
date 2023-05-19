@@ -117,4 +117,30 @@ lazy_load_segment_file (struct page *page, void *aux) {
 /* Do the munmap */
 void
 do_munmap (void *addr) {
+	//find information about the file
+	struct thread* curr = thread_current();
+	size_t length;
+	if(!list_empty(&curr->mmap_info_list)){
+		for (struct list_elem* c = list_front(&curr->mmap_info_list); c != list_end(&curr->mmap_info_list); ){
+			struct mmap_info* mmap_info = list_entry(c, struct mmap_info, elem);
+			c = c->next;
+			if (mmap_info->addr == addr) {
+				length = mmap_info->length;
+				break;
+			}
+		}
+	}
+
+	// Dirty check
+	for (int i = 0; i <(length / PGSIZE) +1; i++){
+		void* pgaddr = addr + i * PGSIZE;
+		struct page* page = spt_find_page(&curr->spt, pgaddr);
+		
+		if (pml4_is_dirty(curr->pml4, pgaddr)){
+
+		}
+
+	}
+
+	// Decoupling addr with frame
 }

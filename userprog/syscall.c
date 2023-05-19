@@ -459,11 +459,20 @@ sys_mmap(uint64_t* args) {
 		if ((spt_find_page(&thread_current()->spt, addr + PGSIZE*i)) !=NULL) return NULL;
 	}
 
-	return do_mmap(addr, length, writable, fd, offset);
+	void* valid_addr = do_mmap(addr, length, writable, fd, offset);
+	if (valid_addr != NULL){
+		struct mmap_info* mmap_info = malloc(sizeof(struct mmap_info));
+		list_push_back(&thread_current()->mmap_info_list, &mmap_info->elem);
+		mmap_info->addr = addr;
+		mmap_info->length = length;
+		mmap_info->fd = fd;
+		return valid_addr;
+	}
+	return NULL;
 }
 
 void
 sys_munmap(uint64_t* args) {
 	void* addr = (void*) args[1];
-
+	do_munmap(addr);
 }

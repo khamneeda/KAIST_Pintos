@@ -462,6 +462,10 @@ sys_mmap(uint64_t* args) {
 	//Check FD
 	if (fd>=FD_TABLE_SIZE) return 0; 
 
+	//Check offset
+	if (offset > 4096) return 0; //왜지?논리
+
+
 	// Check addr is already used
 	for (int i = 0; i < length / PGSIZE +1; i++){
 		if ((spt_find_page(&thread_current()->spt, addr + PGSIZE*i)) !=NULL) return NULL;
@@ -470,10 +474,10 @@ sys_mmap(uint64_t* args) {
 	void* valid_addr = do_mmap(addr, length, writable, fd, offset);
 	if (valid_addr != NULL){
 		struct mmap_info* mmap_info = malloc(sizeof(struct mmap_info));
-		list_push_back(&thread_current()->mmap_info_list, &mmap_info->elem);
 		mmap_info->addr = addr;
 		mmap_info->length = length;
 		mmap_info->fd = fd;
+		list_push_back(&thread_current()->mmap_info_list, &mmap_info->elem);
 		return (int64_t) valid_addr;
 	}
 	return 0;

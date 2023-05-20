@@ -71,6 +71,7 @@ do_mmap (void *addr, size_t length, int writable,
 	uint32_t read_bytes = length;
 	uint32_t zero_bytes;
 
+
 	if (read_bytes % PGSIZE) zero_bytes = PGSIZE - (read_bytes % PGSIZE);
 
 	while (read_bytes > 0 || zero_bytes > 0) {
@@ -119,9 +120,10 @@ lazy_load_segment_file (struct page *page, void *aux) {
 	}
 	memset(kpage + page_read_bytes, 0, page_zero_bytes);
 */
-    size_t temp_read_bytes = file_read(file, kpage, page_read_bytes) ;
+    size_t temp_read_bytes = file_read(file, kpage, page_read_bytes) ; //이게 0나옴; ??
 	memset(kpage + temp_read_bytes, 0, page_read_bytes-temp_read_bytes);
 	memset(kpage + page_read_bytes, 0, page_zero_bytes);
+	free(aux_set); //-바로 해제해줄것
 	return true;
 }
 

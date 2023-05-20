@@ -508,7 +508,8 @@ supplemental_page_table_kill (struct supplemental_page_table *spt) {
 	// hash_first(&i, &spt->hash);
 	// struct hash_elem* e = i.elem;
 
-	// Remove page, 
+	// Remove page, frame, pml4 entry for each pages
+	// Call munmap or vm_dealloc ==> distroy, free(struct page)
 	// while (hash_next (&i))
 	// {
 	// 	struct page *page = hash_entry (hash_cur (&i), struct page, elem);

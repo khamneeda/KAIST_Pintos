@@ -128,6 +128,13 @@ spt_remove_page (struct supplemental_page_table *spt, struct page *page) {
 	struct hash_elem* e = hash_delete(&spt->hash, &page->elem);
 	ASSERT(e != NULL); //임시로 바꿔둠 error띄우던가 해야할거같은데
 
+	//file일 때는 munmap()으로 해야될거같은데
+	enum vm_type ty = page_get_type(page);
+	if (ty == VM_FILE){
+		do_munmap(page->va);
+		return;
+	}
+
 	vm_dealloc_page (page);
 }
 
@@ -478,10 +485,41 @@ void hash_free (struct hash_elem *e, void *aux){
 /* Free the resource hold by the supplemental page table */
 /* This function also free frames linked to pages*/
 void
-supplemental_page_table_kill (struct supplemental_page_table *spt UNUSED) {
+supplemental_page_table_kill (struct supplemental_page_table *spt) {
 	/* TODO: Destroy all the supplemental_page_table hold by thread and
-	 * TODO: writeback all the
-	  modified contents to the storage. */
+	 * TODO: writeback all the modified contents to the storage. */
+	//munmap()호출해서 frame 변동사항 기록하고(file일 경우에)
+
+	//해당 frame모두 kill? --> page도 모두 kill
+		//이건 무슨함수? -->  file일 때 vm_munmap() 아니면 vm_dealloc_page()
+	//thread kill할때 쓰는거니까 그냥 다 free해버리면 됨
+	
+	// enum vm_type ty = page_get_type(page);
+	// if (ty == VM_FILE){
+	// 	do_munmap(page->va);
+
+	//그냥 spt_remove_page 전부 해주면 될거같은데
+
+
+
+	//아래 코드에서 모든 테케 에러남
+
+	// struct hash_iterator i;
+	// hash_first(&i, &spt->hash);
+	// struct hash_elem* e = i.elem;
+
+	// Remove page, 
+	// while (hash_next (&i))
+	// {
+	// 	struct page *page = hash_entry (hash_cur (&i), struct page, elem);
+	// 	spt_remove_page(spt, page);
+	// }
+
+
+
+
+
+
 	//hash_destroy (&spt->hash, hash_free); 
 	//process_cleanup()에서 호출됨, 후에 pml4 destroy 부르는데 얘랑 충돌되지 않게 해야함) 
 	return;

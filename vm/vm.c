@@ -387,7 +387,7 @@ vm_install_page (void *upage, void *kpage, bool writable) {
 	/* Verify that there's not already a page at that virtual
 	 * address, then map our page there. */
 	return (pml4_get_page (t->pml4, upage) == NULL
-			&& pml4_set_page (t->pml4, upage, kpage, writable));get_page (t->pml4, upage);
+			&& pml4_set_page (t->pml4, upage, kpage, writable));
 }
 
 
@@ -473,7 +473,6 @@ void hash_free (struct hash_elem *e, void *aux){
 	//free(page->frame);
 	//struct frame은 free해줘도되나
 	//page안에 저장된 정보 *frame free또는 뭔가 업데이트
-	//??? pml4관련 뭔가 해야함
 }
 
 /* Free the resource hold by the supplemental page table */

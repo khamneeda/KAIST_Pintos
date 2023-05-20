@@ -18,7 +18,7 @@
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
 
-int check_address(uintptr_t);
+int check_address(void *);
 void sys_halt (uint64_t *);
 void sys_exit (uint64_t *); 
 void sys_exit_num (int); 
@@ -174,9 +174,9 @@ syscall_handler (struct intr_frame *f) {
 }
 
 int
-check_address(uintptr_t f){
+check_address(void * f){
 	//printf("%lld",KERN_BASE);
-	if(f != NULL && f < KERN_BASE){
+	if(f != NULL && is_user_vaddr(f)){
 		/*struct thread* curr=thread_current();
 		const uint64_t va = f;
 		uint64_t *pte= pml4e_walk(curr->pml4,f,0);
@@ -309,6 +309,10 @@ sys_read (uint64_t* args) {
 	uint8_t key;
 
 	if (!check_address(buffer)) sys_exit_num(-1); // Or return -1? Or put it in default
+	struct page* page= spt_find_page(&thread_current()->spt, pg_round_down(buffer));
+	if( page !=NULL){
+		if(size!=0 && page->writable==false){  sys_exit_num(-1); }
+	}
 
 	struct file* file;
 	if(fd<0||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
@@ -454,6 +458,9 @@ sys_mmap(uint64_t* args) {
 
 	// Check length != 0
 	if (length == 0) return 0;
+
+	//Check FD
+	if (fd>=FD_TABLE_SIZE) return 0; 
 
 	// Check addr is already used
 	for (int i = 0; i < length / PGSIZE +1; i++){

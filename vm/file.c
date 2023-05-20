@@ -28,12 +28,13 @@ file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 	page->operations = &file_ops;
 	struct uninit_page *uninit = &page->uninit;
 	void* aux = uninit->aux; 
-	memset(&uninit, 0, sizeof(struct uninit_page));
+	memset(uninit, 0, sizeof(struct uninit_page));
 
 	struct file_page *file_page = &page->file;
 	file_page->type=type;
     file_page->kva=kva;
 	file_page->aux=aux;
+	return true;
 }
 
 /* Swap in the page by read contents from the file. */
@@ -65,7 +66,7 @@ file_backed_destroy (struct page *page) {
 /* Do the mmap */
 void *
 do_mmap (void *addr, size_t length, int writable,
-		struct file *file, off_t ofs) {
+		int fd, off_t ofs) {
 	uint8_t *upage = addr;
 	uint32_t read_bytes = length;
 	uint32_t zero_bytes;
@@ -79,7 +80,7 @@ do_mmap (void *addr, size_t length, int writable,
 		/* TODO: Set up aux to pass information to the lazy_load_segment. */
 		void *aux = NULL;
 		struct lazy_args_set *aux_set = malloc(sizeof(struct lazy_args_set)); //??
-		aux_set->file=file;
+		aux_set->file=thread_current()->fd_table[fd];
 		aux_set->ofs=ofs;
 		aux_set->read_bytes=read_bytes;
 		aux_set->zero_bytes=zero_bytes;
@@ -112,12 +113,15 @@ lazy_load_segment_file (struct page *page, void *aux) {
 	void* kpage=page->frame->kva;
 
 	file_seek(file, aux_set->ofs);
-
+/*
 	if (file_read(file, kpage, page_read_bytes) != (int) page_read_bytes){
 		return false;
 	}
 	memset(kpage + page_read_bytes, 0, page_zero_bytes);
-
+*/
+    size_t temp_read_bytes = file_read(file, kpage, page_read_bytes) ;
+	memset(kpage + temp_read_bytes, 0, page_read_bytes-temp_read_bytes);
+	memset(kpage + page_read_bytes, 0, page_zero_bytes);
 	return true;
 }
 

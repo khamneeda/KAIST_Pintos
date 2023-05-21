@@ -497,6 +497,7 @@ sys_mmap(uint64_t* args) {
 		mmap_info->addr = addr;
 		mmap_info->length = length;
 		mmap_info->fd = fd;
+		mmap_info->off = offset;
 		list_push_back(&thread_current()->mmap_info_list, &mmap_info->elem);
 		return (int64_t) valid_addr;
 	}

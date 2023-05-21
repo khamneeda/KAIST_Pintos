@@ -135,6 +135,7 @@ do_munmap (void *addr) {
 	struct thread* curr = thread_current();
 	size_t length = 0;
 	int fd;
+	off_t off;
 	if(!list_empty(&curr->mmap_info_list)){
 		for (struct list_elem* c = list_front(&curr->mmap_info_list); c != list_end(&curr->mmap_info_list); ){
 			struct mmap_info* mmap_info = list_entry(c, struct mmap_info, elem);
@@ -142,6 +143,7 @@ do_munmap (void *addr) {
 			if (mmap_info->addr == addr) {
 				length = mmap_info->length;
 				fd= mmap_info->fd;
+				off = mmap_info->off;
 				list_remove(&mmap_info->elem);
 				free(mmap_info);
 				break;
@@ -154,12 +156,14 @@ do_munmap (void *addr) {
 	int pgnum;
 	pgnum= length/PGSIZE;
 	if(length%PGSIZE){ pgnum = pgnum+1;}
+	struct file* file= curr->fd_table[fd];
+	if(file!=NULL) file_seek(file, off);
 	for (int i = 0; i <pgnum; i++){
 		void* pgaddr = addr + i * PGSIZE;
 		struct page* page = spt_find_page(&curr->spt, pgaddr);
-		struct file* file= curr->fd_table[fd];
 
-		if (i==(length / PGSIZE)&&(length%PGSIZE)) write_bytes = length % PGSIZE; 
+		if (i==(length / PGSIZE)&&(length%PGSIZE)) write_bytes = length % PGSIZE;
+		if (length<PGSIZE) write_bytes = length; 
 		if (pml4_is_dirty(curr->pml4, pgaddr)){
 			if((file_write (file, pgaddr,write_bytes)!= write_bytes)){
 				// some error...
@@ -171,4 +175,5 @@ do_munmap (void *addr) {
 		vm_dealloc_page (page);
 		palloc_free_page(kva);
 		}
-	}
+	if(file!=NULL) file_seek(file, off);
+}

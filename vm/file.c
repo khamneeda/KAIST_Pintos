@@ -142,6 +142,8 @@ do_munmap (void *addr) {
 			if (mmap_info->addr == addr) {
 				length = mmap_info->length;
 				fd= mmap_info->fd;
+				list_remove(&mmap_info->elem);
+				free(mmap_info);
 				break;
 			}
 		}
@@ -157,16 +159,16 @@ do_munmap (void *addr) {
 		struct page* page = spt_find_page(&curr->spt, pgaddr);
 		struct file* file= curr->fd_table[fd];
 
-		if (i==(length / PGSIZE)) write_bytes = length % PGSIZE; 
+		if (i==(length / PGSIZE)&&(length%PGSIZE)) write_bytes = length % PGSIZE; 
 		if (pml4_is_dirty(curr->pml4, pgaddr)){
 			if((file_write (file, pgaddr,write_bytes)!= write_bytes)){
 				// some error...
 			}
-		
+		}
 	// Decoupling addr with frame
 		pml4_clear_page(curr->pml4, pgaddr);
-		palloc_free_page(page->frame->kva);
+		void* kva = page->frame->kva;
 		vm_dealloc_page (page);
+		palloc_free_page(kva);
 		}
 	}
-}

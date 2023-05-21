@@ -133,7 +133,7 @@ void
 do_munmap (void *addr) {
 	//find information about the file
 	struct thread* curr = thread_current();
-	size_t length;
+	size_t length = 0;
 	int fd;
 	if(!list_empty(&curr->mmap_info_list)){
 		for (struct list_elem* c = list_front(&curr->mmap_info_list); c != list_end(&curr->mmap_info_list); ){
@@ -141,7 +141,7 @@ do_munmap (void *addr) {
 			c = c->next;
 			if (mmap_info->addr == addr) {
 				length = mmap_info->length;
-				fd= mmap_info->length;
+				fd= mmap_info->fd;
 				break;
 			}
 		}
@@ -149,7 +149,10 @@ do_munmap (void *addr) {
 
 	size_t write_bytes = PGSIZE;
 	// Dirty check
-	for (int i = 0; i <(length / PGSIZE) +1; i++){
+	int pgnum;
+	pgnum= length/PGSIZE;
+	if(length%PGSIZE){ pgnum = pgnum+1;}
+	for (int i = 0; i <pgnum; i++){
 		void* pgaddr = addr + i * PGSIZE;
 		struct page* page = spt_find_page(&curr->spt, pgaddr);
 		struct file* file= curr->fd_table[fd];

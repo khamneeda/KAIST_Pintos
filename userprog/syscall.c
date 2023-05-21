@@ -426,12 +426,27 @@ sys_tell (uint64_t* args) {
 
 void
 sys_close (uint64_t* args) {
-	int fd = (int) args[1];
-	if(fd<2||fd>=thread_current()->num_of_fd){sys_exit_num(-1);}
-	struct file* file = get_file(fd);
-	if(file==NULL){sys_exit_num(-1);}
-	thread_current()->fd_table[fd]=NULL;
-	file_close(file);
+   int fd = (int) args[1];
+   struct thread* curr= thread_current();
+   if(fd<2||fd>=curr->num_of_fd){sys_exit_num(-1);}
+   struct file* file = get_file(fd);
+   if(file==NULL){sys_exit_num(-1);}
+
+   if(!list_empty(&curr->mmap_info_list)){
+   for (struct list_elem* c = list_front(&curr->mmap_info_list); c != list_end(&curr->mmap_info_list); ){
+      struct mmap_info* mmap_info = list_entry(c,struct mmap_info, elem);
+      c = c->next;
+      int pgnum;
+      if(mmap_info->fd==fd){
+         pgnum= mmap_info->length/PGSIZE;
+         if(mmap_info->length%PGSIZE){ pgnum = pgnum+1;}
+         for(int i=0; i<pgnum;i++){
+            uint8_t aa= *(uint8_t *)(mmap_info->addr+PGSIZE*i);
+         }
+      }
+   }}
+   thread_current()->fd_table[fd]=NULL;
+   file_close(file);
 }
 
 /* Get file pointer searching in the current threads fd_table */
@@ -465,12 +480,14 @@ sys_mmap(uint64_t* args) {
 	if (thread_current()->fd_table[fd] == NULL) return 0;
 
 	//Check offset
-	if (offset > 4096) return 0; //왜지?논리
+	//if (offset > file_length(thread_current()->fd_table[fd])) return 0; //왜지?논리
+	if(offset>4096) return 0;
 
-
-
+    int pgnum;
+	pgnum= length/PGSIZE;
+	if(length%PGSIZE){ pgnum = pgnum+1;}
 	// Check addr is already used
-	for (int i = 0; i < length / PGSIZE +1; i++){
+	for (int i = 0; i < pgnum; i++){
 		if ((spt_find_page(&thread_current()->spt, addr + PGSIZE*i)) !=NULL) return NULL;
 	}
 

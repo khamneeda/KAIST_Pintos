@@ -123,7 +123,7 @@ lazy_load_segment_file (struct page *page, void *aux) {
     size_t temp_read_bytes = file_read(file, kpage, page_read_bytes) ; //이게 0나옴; ??
 	memset(kpage + temp_read_bytes, 0, page_read_bytes-temp_read_bytes);
 	memset(kpage + page_read_bytes, 0, page_zero_bytes);
-	free(aux_set); //-바로 해제해줄것
+	//free(aux_set); //destory시 free하기 --> copy시 사용해야함
 	return true;
 }
 

@@ -467,8 +467,18 @@ supplemental_page_table_copy (struct supplemental_page_table *dst,
 			memcpy(child_page->frame->kva, page->frame->kva, PGSIZE);
 		}
 		else if(ty==VM_FILE){
-			vm_alloc_page_with_initializer(VM_FILE,page->va,page->writable,page->init,aux);
-			//구현 더 필요함
+			if(page->file.aux){
+				aux = malloc(sizeof(struct lazy_args_set));
+				memcpy(aux, page->file.aux, sizeof(struct lazy_args_set));
+			}
+			if(!vm_alloc_page_with_initializer(VM_FILE, page->va, page->writable, page->init, aux)) 
+				return false;
+			struct page* child_page = spt_find_page(dst, page->va);
+			if(!vm_do_claim_page(child_page))
+				return false;
+			memcpy(child_page->frame->kva, page->frame->kva, PGSIZE);
+			//먼가 vm_alloc대신에 do_mmap쓰거나 그래야할거같음
+			//vm_alloc_page_with_initializer(VM_FILE,page->va,page->writable,page->init,aux);
 		}
 	}
 	return success;

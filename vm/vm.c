@@ -440,7 +440,6 @@ bool
 supplemental_page_table_copy (struct supplemental_page_table *dst,
 	struct supplemental_page_table *src) {
 	struct hash_iterator i;
-	bool success = true;
 
 	hash_first (&i, &src->hash);
 	while (hash_next (&i))
@@ -481,7 +480,7 @@ supplemental_page_table_copy (struct supplemental_page_table *dst,
 			//vm_alloc_page_with_initializer(VM_FILE,page->va,page->writable,page->init,aux);
 		}
 	}
-	return success;
+	return true;
 }
 
 void hash_free (struct hash_elem *e, void *aux){

@@ -137,9 +137,8 @@ do_munmap (void *addr) {
 	int fd;
 	off_t off;
 	if(!list_empty(&curr->mmap_info_list)){
-		for (struct list_elem* c = list_front(&curr->mmap_info_list); c != list_end(&curr->mmap_info_list); ){
+		for (struct list_elem* c = list_front(&curr->mmap_info_list); c != list_end(&curr->mmap_info_list); c = c->next){
 			struct mmap_info* mmap_info = list_entry(c, struct mmap_info, elem);
-			c = c->next;
 			if (mmap_info->addr == addr) {
 				length = mmap_info->length;
 				fd= mmap_info->fd;

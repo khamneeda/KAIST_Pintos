@@ -462,8 +462,11 @@ sys_mmap(uint64_t* args) {
 	//Check FD
 	if (fd>=FD_TABLE_SIZE) return 0; 
 
+	if (thread_current()->fd_table[fd] == NULL) return 0;
+
 	//Check offset
 	if (offset > 4096) return 0; //왜지?논리
+
 
 
 	// Check addr is already used

@@ -17,6 +17,7 @@ struct mmap_info {
 	size_t length;
 	struct list_elem elem;
 	int fd;
+	struct file* file;
 	off_t off;
 };
 

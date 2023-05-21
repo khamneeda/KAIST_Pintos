@@ -135,6 +135,7 @@ do_munmap (void *addr) {
 	struct thread* curr = thread_current();
 	size_t length = 0;
 	int fd;
+	struct file* m_file;
 	off_t off;
 	if(!list_empty(&curr->mmap_info_list)){
 		for (struct list_elem* c = list_front(&curr->mmap_info_list); c != list_end(&curr->mmap_info_list); c = c->next){
@@ -142,6 +143,7 @@ do_munmap (void *addr) {
 			if (mmap_info->addr == addr) {
 				length = mmap_info->length;
 				fd= mmap_info->fd;
+				m_file= mmap_info->file;
 				off = mmap_info->off;
 				list_remove(&mmap_info->elem);
 				free(mmap_info);
@@ -156,7 +158,8 @@ do_munmap (void *addr) {
 	pgnum= length/PGSIZE;
 	if(length%PGSIZE){ pgnum = pgnum+1;}
 	struct file* file= curr->fd_table[fd];
-	if(file!=NULL) file_seek(file, off);
+	if(file==NULL) file=m_file; 
+	file_seek(file, off);
 	for (int i = 0; i <pgnum; i++){
 		void* pgaddr = addr + i * PGSIZE;
 		struct page* page = spt_find_page(&curr->spt, pgaddr);
@@ -174,5 +177,6 @@ do_munmap (void *addr) {
 		vm_dealloc_page (page);
 		palloc_free_page(kva);
 		}
-	if(file!=NULL) file_seek(file, off);
+		file_seek(file, off);
+		file_close(m_file);
 }

@@ -83,8 +83,7 @@ do_mmap (void *addr, size_t length, int writable,
 		struct lazy_args_set *aux_set = malloc(sizeof(struct lazy_args_set)); //??
 		aux_set->file=thread_current()->fd_table[fd];
 		aux_set->ofs=ofs;
-		aux_set->read_bytes=read_bytes;
-		aux_set->zero_bytes=zero_bytes;
+		aux_set->original_ofs=file_tell(aux_set->file);
 		aux_set->page_read_bytes=page_read_bytes;
 		aux_set->page_zero_bytes=page_zero_bytes;
 
@@ -124,6 +123,7 @@ lazy_load_segment_file (struct page *page, void *aux) {
 	memset(kpage + temp_read_bytes, 0, page_read_bytes-temp_read_bytes);
 	memset(kpage + page_read_bytes, 0, page_zero_bytes);
 	//free(aux_set); //destory시 free하기 --> copy시 사용해야함
+	file_seek(file, aux_set->original_ofs);
 	return true;
 }
 

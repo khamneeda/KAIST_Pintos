@@ -869,8 +869,6 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 		struct lazy_args_set *aux_set = malloc(sizeof(struct lazy_args_set)); //??
 		aux_set->file=file;
 		aux_set->ofs=ofs;
-		aux_set->read_bytes=read_bytes;
-		aux_set->zero_bytes=zero_bytes;
 		aux_set->page_read_bytes=page_read_bytes;
 		aux_set->page_zero_bytes=page_zero_bytes;
 

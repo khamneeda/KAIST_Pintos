@@ -530,7 +530,7 @@ supplemental_page_table_kill (struct supplemental_page_table *spt) {
 
 
 
-	//hash_destroy (&spt->hash, hash_free); 
+	hash_destroy (&spt->hash, hash_free); 
 	//process_cleanup()에서 호출됨, 후에 pml4 destroy 부르는데 얘랑 충돌되지 않게 해야함) 
 	return;
 }

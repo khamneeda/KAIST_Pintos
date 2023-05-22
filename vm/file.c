@@ -54,6 +54,16 @@ static void
 file_backed_destroy (struct page *page) {
 	struct file_page *file_page = &page->file;
 
+	struct lazy_args_set* aux_set = file_page->aux;
+
+
+
+
+
+
+
+	
+	file_close(aux_set->file);
 	//palloc_free_page(page->frame->kva);
 	list_remove(&page->frame->elem);
 	free(page->frame);
@@ -81,7 +91,7 @@ do_mmap (void *addr, size_t length, int writable,
 		/* TODO: Set up aux to pass information to the lazy_load_segment. */
 		void *aux = NULL;
 		struct lazy_args_set *aux_set = malloc(sizeof(struct lazy_args_set)); //??
-		aux_set->file=thread_current()->fd_table[fd];
+		aux_set->file=file_reopen(thread_current()->fd_table[fd]);
 		aux_set->ofs=ofs;
 		aux_set->original_ofs=file_tell(aux_set->file);
 		aux_set->page_read_bytes=page_read_bytes;
@@ -123,7 +133,9 @@ lazy_load_segment_file (struct page *page, void *aux) {
 	memset(kpage + temp_read_bytes, 0, page_read_bytes-temp_read_bytes);
 	memset(kpage + page_read_bytes, 0, page_zero_bytes);
 	//free(aux_set); //destory시 free하기 --> copy시 사용해야함
-	file_seek(file, aux_set->original_ofs);
+	aux_set->page_read_bytes= page_zero_bytes+page_read_bytes-temp_read_bytes;
+	aux_set->page_read_bytes = temp_read_bytes;
+	//file_seek(file, aux_set->original_ofs);
 	return true;
 }
 

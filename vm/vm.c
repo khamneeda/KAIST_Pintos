@@ -469,6 +469,8 @@ supplemental_page_table_copy (struct supplemental_page_table *dst,
 			if(page->file.aux){
 				aux = malloc(sizeof(struct lazy_args_set));
 				memcpy(aux, page->file.aux, sizeof(struct lazy_args_set));
+				struct lazy_args_set* file_aux = page->file.aux;
+				aux->file= file_reopen(file_aux->file);
 			}
 			if(!vm_alloc_page_with_initializer(VM_FILE, page->va, page->writable, page->init, aux)) 
 				return false;
@@ -508,7 +510,7 @@ supplemental_page_table_kill (struct supplemental_page_table *spt) {
 	// 	do_munmap(page->va);
 
 	//그냥 spt_remove_page 전부 해주면 될거같은데
-
+/*
 
 
 	struct hash_iterator i;
@@ -554,7 +556,7 @@ supplemental_page_table_kill (struct supplemental_page_table *spt) {
 
 
 
-
+*/
 
 
 	hash_destroy (&spt->hash, hash_free); 

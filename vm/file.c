@@ -56,13 +56,13 @@ file_backed_destroy (struct page *page) {
 
 	struct lazy_args_set* aux_set = file_page->aux;
 
-
-
-
-
-
-
-	
+	file_seek(aux_set->file,aux_set->ofs);
+	size_t write_bytes = aux_set->page_read_bytes;
+	if (pml4_is_dirty(thread_current()->pml4, page->va)){
+      if((file_write (aux_set->file, page->va ,write_bytes)!= write_bytes)){
+            // some error...
+         }
+    }
 	file_close(aux_set->file);
 	//palloc_free_page(page->frame->kva);
 	list_remove(&page->frame->elem);
@@ -93,7 +93,6 @@ do_mmap (void *addr, size_t length, int writable,
 		struct lazy_args_set *aux_set = malloc(sizeof(struct lazy_args_set)); //??
 		aux_set->file=file_reopen(thread_current()->fd_table[fd]);
 		aux_set->ofs=ofs;
-		aux_set->original_ofs=file_tell(aux_set->file);
 		aux_set->page_read_bytes=page_read_bytes;
 		aux_set->page_zero_bytes=page_zero_bytes;
 
@@ -135,7 +134,6 @@ lazy_load_segment_file (struct page *page, void *aux) {
 	//free(aux_set); //destory시 free하기 --> copy시 사용해야함
 	aux_set->page_read_bytes= page_zero_bytes+page_read_bytes-temp_read_bytes;
 	aux_set->page_read_bytes = temp_read_bytes;
-	//file_seek(file, aux_set->original_ofs);
 	return true;
 }
 
@@ -155,7 +153,6 @@ do_munmap (void *addr) {
 			if (mmap_info->addr == addr) {
 				length = mmap_info->length;
 				fd= mmap_info->fd;
-				m_file= mmap_info->file;
 				off = mmap_info->off;
 				list_remove(&mmap_info->elem);
 				free(mmap_info);
@@ -169,26 +166,13 @@ do_munmap (void *addr) {
 	int pgnum;
 	pgnum= length/PGSIZE;
 	if(length%PGSIZE){ pgnum = pgnum+1;}
-	struct file* file= curr->fd_table[fd];
-	if(file==NULL) file=m_file; 
-	file_seek(file, off);
 	for (int i = 0; i <pgnum; i++){
 		void* pgaddr = addr + i * PGSIZE;
 		struct page* page = spt_find_page(&curr->spt, pgaddr);
-
-		if (i==(length / PGSIZE)&&(length%PGSIZE)) write_bytes = length % PGSIZE;
-		if (length<PGSIZE) write_bytes = length; 
-		if (pml4_is_dirty(curr->pml4, pgaddr)){
-			if((file_write (file, pgaddr,write_bytes)!= write_bytes)){
-				// some error...
-			}
-		}
 	// Decoupling addr with frame
-		pml4_clear_page(curr->pml4, pgaddr);
 		void* kva = page->frame->kva;
 		vm_dealloc_page (page);
+		pml4_clear_page(curr->pml4, pgaddr);
 		palloc_free_page(kva);
-		}
-		file_seek(file, off);
-		file_close(m_file);
+	}
 }

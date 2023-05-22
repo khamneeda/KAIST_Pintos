@@ -100,7 +100,6 @@ struct supplemental_page_table {
 struct lazy_args_set{
 	struct file *file;
 	off_t ofs;
-	off_t original_ofs;
 	size_t page_read_bytes;
 	size_t page_zero_bytes;
 };

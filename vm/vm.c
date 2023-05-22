@@ -511,6 +511,33 @@ supplemental_page_table_kill (struct supplemental_page_table *spt) {
 
 
 
+	struct hash_iterator i;
+	hash_first(&i, &spt->hash);
+	struct hash_elem* e = i.elem;
+
+	//Remove page, frame, pml4 entry for each pages
+	//Call munmap or vm_dealloc ==> distroy, free(struct page)
+	while (hash_next (&i))
+	{
+		struct page *page = hash_entry (hash_cur (&i), struct page, elem);
+
+		spt_remove_page(&thread_current()->spt, page);
+
+		//do_munmap(page->va);
+
+		// struct hash_elem* e = hash_delete(&spt->hash, &page->elem);
+
+		// //file일 때는 munmap()으로 해야될거같은데
+		// enum vm_type ty = page_get_type(page);
+		// if (ty == VM_FILE){
+		// 	do_munmap(page->va);
+		// 	return;
+		// }
+		// destory (page);
+	}
+
+
+
 	//아래 코드에서 모든 테케 에러남
 
 	// struct hash_iterator i;

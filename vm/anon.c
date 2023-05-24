@@ -81,10 +81,14 @@ anon_swap_out (struct page *page) {
 static void
 anon_destroy (struct page *page) {
 //	palloc_free_page(page->frame->kva);
+	struct anon_page *anon_page = &page->anon;
+	if(page->frame!=NULL){
 	list_remove(&page->frame->elem);
 	free(page->frame);
-	
-	struct anon_page *anon_page = &page->anon;
+	}
+	else{
+		bitmap_set(swap_table,anon_page->idx,false);
+	}
 	free(anon_page->aux);
 	memset(anon_page, 0, sizeof(struct anon_page));
 	struct hash_elem* e = hash_delete(&thread_current()->spt.hash, &page->elem);

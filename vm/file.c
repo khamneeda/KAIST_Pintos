@@ -79,6 +79,11 @@ file_backed_destroy (struct page *page) {
 
 	struct lazy_args_set* aux_set = file_page->aux;
 
+	if(page->frame!=NULL){
+	list_remove(&page->frame->elem);
+	free(page->frame);
+	
+
 	file_seek(aux_set->file,aux_set->ofs);
 	size_t write_bytes = aux_set->page_read_bytes;
 	if (pml4_is_dirty(thread_current()->pml4, page->va)){
@@ -86,10 +91,10 @@ file_backed_destroy (struct page *page) {
             // some error...
          }
     }
+	}
 	file_close(aux_set->file);
 	//palloc_free_page(page->frame->kva);
-	list_remove(&page->frame->elem);
-	free(page->frame);
+
 	
 	free(file_page->aux);
 	memset(file_page, 0, sizeof(struct file_page));

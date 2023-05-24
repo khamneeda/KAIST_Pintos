@@ -8,6 +8,7 @@ struct anon_page {
     enum vm_type type;
     void *kva;
     void *aux;
+    size_t idx;
 };
 
 void vm_anon_init (void);

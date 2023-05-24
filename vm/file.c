@@ -40,13 +40,36 @@ file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 /* Swap in the page by read contents from the file. */
 static bool
 file_backed_swap_in (struct page *page, void *kva) {
-	struct file_page *file_page UNUSED = &page->file;
+	struct file_page *file_page = &page->file;
+	struct lazy_args_set* aux = file_page->aux;
+	struct file* file = aux->file;
+	size_t offset = file_tell(file);
+	file_seek(file,aux->ofs);
+	if(file_read(file, page->va,aux->page_read_bytes)!=aux->page_read_bytes)
+		 return false;
+	memset(page->va + aux->page_read_bytes, 0, aux->page_zero_bytes);
+	file_seek(file,offset);
+	return true;
 }
 
 /* Swap out the page by writeback contents to the file. */
 static bool
 file_backed_swap_out (struct page *page) {
-	struct file_page *file_page UNUSED = &page->file;
+	struct file_page *file_page = &page->file;
+	struct lazy_args_set* aux = file_page->aux;
+	struct file* file = aux->file;
+	size_t offset = file_tell(file);
+	if(!page->writable) return true;
+	if (pml4_is_dirty(thread_current()->pml4, page->va)){
+	  file_seek(aux->file,aux->ofs);
+      if((file_write (aux->file, page->va ,aux->page_read_bytes)!= aux->page_read_bytes))
+            return false; 
+    }
+	file_seek(file,offset);
+	page->frame=NULL;
+	pml4_set_dirty(thread_current()->pml4,page->va,false);
+	pml4_clear_page(thread_current()->pml4, page->va);
+	return true;
 }
 
 /* Destory the file backed page. PAGE will be freed by the caller. */

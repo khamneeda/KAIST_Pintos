@@ -169,11 +169,11 @@ vm_evict_frame (void) {
 	/* TODO: swap out the victim and return the evicted frame. */
 	/*아래 코드 swap-out에서 할 수 있는지 고려*/
 	bool succ = swap_out(victim->page); //dirty bit 등 고려 안 함. 
+	if (!succ) return NULL;
 	// frame 내 정보 바꿈 생각 안 함. 
 	victim->page = NULL; //swap out 안에서 바꿔주자 
 	list_remove(&victim->elem);
 
-	if (!succ) return NULL;
 	return victim;
 }
 

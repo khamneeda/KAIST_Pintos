@@ -34,6 +34,7 @@ file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 	file_page->type=type;
     file_page->kva=kva;
 	file_page->aux=aux;
+	file_page->pml4 = thread_current()->pml4;
 	return true;
 }
 
@@ -45,9 +46,9 @@ file_backed_swap_in (struct page *page, void *kva) {
 	struct file* file = aux->file;
 	size_t offset = file_tell(file);
 	file_seek(file,aux->ofs);
-	if(file_read(file, page->va,aux->page_read_bytes)!=aux->page_read_bytes)
+	if(file_read(file, kva ,aux->page_read_bytes)!=aux->page_read_bytes)
 		 return false;
-	memset(page->va + aux->page_read_bytes, 0, aux->page_zero_bytes);
+	memset(kva + aux->page_read_bytes, 0, aux->page_zero_bytes);
 	file_seek(file,offset);
 	return true;
 }
@@ -58,17 +59,17 @@ file_backed_swap_out (struct page *page) {
 	struct file_page *file_page = &page->file;
 	struct lazy_args_set* aux = file_page->aux;
 	struct file* file = aux->file;
-	size_t offset = file_tell(file);
+	off_t offset = file_tell(file);
 	if(!page->writable) return true;
-	if (pml4_is_dirty(thread_current()->pml4, page->va)){
+	if (pml4_is_dirty(file_page->pml4, page->va)){
 	  file_seek(aux->file,aux->ofs);
       if((file_write (aux->file, page->va ,aux->page_read_bytes)!= aux->page_read_bytes))
             return false; 
     }
 	file_seek(file,offset);
 	page->frame=NULL;
-	pml4_set_dirty(thread_current()->pml4,page->va,false);
-	pml4_clear_page(thread_current()->pml4, page->va);
+	pml4_set_dirty(file_page->pml4,page->va,false);
+	pml4_clear_page(file_page->pml4, page->va);
 	return true;
 }
 
@@ -83,7 +84,6 @@ file_backed_destroy (struct page *page) {
 	list_remove(&page->frame->elem);
 	free(page->frame);
 	
-
 	file_seek(aux_set->file,aux_set->ofs);
 	size_t write_bytes = aux_set->page_read_bytes;
 	if (pml4_is_dirty(thread_current()->pml4, page->va)){
@@ -198,9 +198,16 @@ do_munmap (void *addr) {
 		void* pgaddr = addr + i * PGSIZE;
 		struct page* page = spt_find_page(&curr->spt, pgaddr);
 	// Decoupling addr with frame
+	    ASSERT(page!=NULL);
+		struct frame* frame = page->frame;
+		if(frame==NULL){
+	       vm_dealloc_page(page);
+		}
+		else{
 		void* kva = page->frame->kva;
-		vm_dealloc_page (page);
-		pml4_clear_page(curr->pml4, pgaddr);
-		palloc_free_page(kva);
+		   vm_dealloc_page (page);
+		   pml4_clear_page(curr->pml4, pgaddr);
+		   palloc_free_page(kva);
+		}
 	}
 }

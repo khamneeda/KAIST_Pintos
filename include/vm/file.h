@@ -3,6 +3,7 @@
 #include "filesys/file.h"
 #include "vm/vm.h"
 
+
 struct page;
 enum vm_type;
 
@@ -10,6 +11,7 @@ struct file_page {
 	enum vm_type type;
     void *kva;
     void *aux;
+    uint64_t* pml4;
 };
 
 void vm_file_init (void);

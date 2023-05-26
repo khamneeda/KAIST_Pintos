@@ -44,6 +44,7 @@ anon_initializer (struct page *page, enum vm_type type, void *kva) {
 	anon_page->type=type;
     anon_page->kva=kva;
 	anon_page->aux=aux;
+	anon_page->pml4 = thread_current()->pml4;
 	return true;
 }
 
@@ -54,7 +55,7 @@ anon_swap_in (struct page *page, void *kva) {
 	size_t index = anon_page->idx;
 	
 	for( int i =0 ; i < 8 ; i++){
-		disk_read(swap_disk, 8*index+i,page->va+DISK_SECTOR_SIZE*i);
+		disk_read(swap_disk, 8*index+i,kva+DISK_SECTOR_SIZE*i);
 	}
 
 	bitmap_set(swap_table, index, false);
@@ -73,7 +74,7 @@ anon_swap_out (struct page *page) {
 	}
 	anon_page->idx = index;
 	page->frame=NULL;
-	pml4_clear_page(thread_current()->pml4, page->va);
+	pml4_clear_page(anon_page->pml4, page->va);
 	return true;
 }
 
@@ -90,6 +91,7 @@ anon_destroy (struct page *page) {
 		bitmap_set(swap_table,anon_page->idx,false);
 	}
 	free(anon_page->aux);
+	ASSERT(thread_current()->pml4==anon_page->pml4);
 	memset(anon_page, 0, sizeof(struct anon_page));
 	struct hash_elem* e = hash_delete(&thread_current()->spt.hash, &page->elem);
 }

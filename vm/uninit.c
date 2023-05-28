@@ -70,6 +70,8 @@ uninit_initialize (struct page *page, void *kva) {
 static void
 uninit_destroy (struct page *page) {
 	struct uninit_page *uninit = &page->uninit;
+	struct lazy_args_set* aux =uninit->aux;
+	if(uninit->type==VM_FILE)file_close(aux->file);
 	free(uninit->aux);
 	/* TODO: Fill this function.
 	 * TODO: If you don't have anything to do, just return. */

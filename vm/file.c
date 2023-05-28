@@ -60,8 +60,7 @@ file_backed_swap_out (struct page *page) {
 	struct lazy_args_set* aux = file_page->aux;
 	struct file* file = aux->file;
 	off_t offset = file_tell(file);
-	if(!page->writable) return true;
-	if (pml4_is_dirty(file_page->pml4, page->va)){
+	if (page->writable&&pml4_is_dirty(file_page->pml4, page->va)){
 	  file_seek(aux->file,aux->ofs);
       if((file_write (aux->file, page->va ,aux->page_read_bytes)!= aux->page_read_bytes))
             return false; 

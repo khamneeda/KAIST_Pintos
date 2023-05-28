@@ -48,12 +48,9 @@ file_backed_swap_in (struct page *page, void *kva) {
 	size_t offset = file_tell(file);
 	file_seek(file,aux->ofs);
 
-	lock_acquire(&open_lock);
 	if(file_read(file, kva ,aux->page_read_bytes)!=aux->page_read_bytes){
-		lock_release(&open_lock);
 		return false;
 	}
-	lock_release(&open_lock);
 
 	memset(kva + aux->page_read_bytes, 0, aux->page_zero_bytes);
 	file_seek(file,offset);
@@ -70,12 +67,9 @@ file_backed_swap_out (struct page *page) {
 	if (page->writable&&pml4_is_dirty(file_page->pml4, page->va)){
 		file_seek(aux->file,aux->ofs);
 
-		lock_acquire(&open_lock);
 		if((file_write (aux->file, page->va ,aux->page_read_bytes)!= aux->page_read_bytes))
-			lock_release(&open_lock);
 			return false; 
 		}
-		lock_release(&open_lock);
 
 	file_seek(file,offset);
 	page->frame=NULL;
@@ -170,9 +164,9 @@ lazy_load_segment_file (struct page *page, void *aux) {
 	}
 	memset(kpage + page_read_bytes, 0, page_zero_bytes);
 */
-	lock_acquire(&open_lock);
+	//lock_acquire(&open_lock);
     size_t temp_read_bytes = file_read(file, kpage, page_read_bytes) ; //이게 0나옴; ??
-	lock_release(&open_lock);
+	//lock_release(&open_lock);
 
 	memset(kpage + temp_read_bytes, 0, page_read_bytes-temp_read_bytes);
 	memset(kpage + page_read_bytes, 0, page_zero_bytes);

@@ -79,6 +79,7 @@ static void
 initd (void *f_name) {
 #ifdef VM
 	supplemental_page_table_init (&thread_current ()->spt);
+	lock_init(&open_lock);
 #endif
 
 	process_init ();
@@ -538,7 +539,10 @@ load (const char *file_name, struct intr_frame *if_) {
 
 
 	/* Open executable file. */
+	lock_acquire(&open_lock);
 	file = filesys_open (name_of_file);
+	lock_release(&open_lock);
+	
 	if (file == NULL) {
 		printf ("load: %s: open failed\n", name_of_file);
 		goto done;

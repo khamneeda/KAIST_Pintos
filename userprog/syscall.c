@@ -11,6 +11,7 @@
 #include "filesys/filesys.h"
 #include "filesys/inode.h"
 #include "filesys/file.h"
+#include "userprog/process.h"
 
 #include "include/lib/string.h"
 #include "vm/vm.h"
@@ -280,7 +281,12 @@ sys_open (uint64_t* args) {
 	// }
 
 	if (curr->num_of_fd == FD_TABLE_SIZE) return -1;
+
+	lock_acquire(&open_lock);
 	struct file* open_file = filesys_open(name);
+	lock_release(&open_lock);
+
+
     if (open_file == NULL) return -1;
 
 	if(!strcmp(name,curr->name)){file_deny_write(open_file);}

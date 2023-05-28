@@ -541,14 +541,12 @@ load (const char *file_name, struct intr_frame *if_) {
 	/* Open executable file. */
 	lock_acquire(&open_lock);
 	file = filesys_open (name_of_file);
-	lock_release(&open_lock);
 
 	if (file == NULL) {
 		printf ("load: %s: open failed\n", name_of_file);
 		goto done;
 	}
 	//file_deny_write(file);
-	lock_acquire(&open_lock);
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
 			|| memcmp (ehdr.e_ident, "\177ELF\2\1\1", 7)
@@ -558,10 +556,8 @@ load (const char *file_name, struct intr_frame *if_) {
 			|| ehdr.e_phentsize != sizeof (struct Phdr)
 			|| ehdr.e_phnum > 1024) {
 		printf ("load: %s: error loading executable\n", name_of_file);
-		lock_release(&open_lock);
 		goto done;
 	}
-	lock_release(&open_lock);
 
 	/* Read program headers. */
 	file_ofs = ehdr.e_phoff;
@@ -573,12 +569,10 @@ load (const char *file_name, struct intr_frame *if_) {
 		file_seek (file, file_ofs);
 
 
-		lock_acquire(&open_lock);
 		if (file_read (file, &phdr, sizeof phdr) != sizeof phdr){
-			lock_release(&open_lock);
 			goto done;
 		}
-		lock_release(&open_lock);
+
 
 		file_ofs += sizeof phdr;
 		switch (phdr.p_type) {
@@ -672,6 +666,7 @@ load (const char *file_name, struct intr_frame *if_) {
 done:
 	/* We arrive here whether the load is successful or not. */
 	//file_close (file);
+	lock_release(&open_lock);
 	return success;
 }
 
@@ -751,6 +746,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 
 	file_seek (file, ofs);
 	while (read_bytes > 0 || zero_bytes > 0) {
+		//lock_acquire(&open_lock);
 		/* Do calculate how to fill this page.
 		 * We will read PAGE_READ_BYTES bytes from FILE
 		 * and zero the final PAGE_ZERO_BYTES bytes. */
@@ -763,13 +759,12 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 			return false;
 
 		/* Load this page. */
-		lock_acquire(&open_lock);
 		if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes) {
 			palloc_free_page (kpage);
-			lock_release(&open_lock);
+			//lock_release(&open_lock);
 			return false;
 		}
-		lock_release(&open_lock);
+		//lock_release(&open_lock);
 		memset (kpage + page_read_bytes, 0, page_zero_bytes);
 
 		/* Add the page to the process's address space. */

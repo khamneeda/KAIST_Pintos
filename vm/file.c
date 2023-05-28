@@ -92,13 +92,10 @@ file_backed_destroy (struct page *page) {
 	file_seek(aux_set->file,aux_set->ofs);
 	size_t write_bytes = aux_set->page_read_bytes;
 	if (pml4_is_dirty(thread_current()->pml4, page->va)){
-		
-		lock_acquire(&open_lock);
 		if((file_write (aux_set->file, page->va ,write_bytes)!= write_bytes)){
 			// some error...
 		}
-		lock_release(&open_lock);
-    }
+   	}
 	}
 	file_close(aux_set->file);
 	//palloc_free_page(page->frame->kva);

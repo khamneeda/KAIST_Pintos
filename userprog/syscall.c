@@ -340,9 +340,9 @@ sys_read (uint64_t* args) {
 		default:
 			file = get_file(fd);
 			if (file == NULL) return -1;
-			lock_acquire(file_rw_lock(file));
+			lock_acquire(&open_lock);
 			read_byte = file_read(file, buffer, size);
-			lock_release(file_rw_lock(file));
+			lock_release(&open_lock);
 			return (int64_t) read_byte;
 	}
 
@@ -407,9 +407,9 @@ sys_write (uint64_t* args) {
 			file = get_file(fd);
 			if (file == NULL) 
 				return (int64_t) 0;
-			lock_acquire(file_rw_lock(file));
+			lock_acquire(&open_lock);
 			write_byte = file_write(file, buffer, size);
-			lock_release(file_rw_lock(file));
+			lock_release(&open_lock);
 			ASSERT(write_byte >= 0);
 			return (int64_t) write_byte;
 	}

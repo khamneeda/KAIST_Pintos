@@ -46,8 +46,14 @@ file_backed_swap_in (struct page *page, void *kva) {
 	struct file* file = aux->file;
 	size_t offset = file_tell(file);
 	file_seek(file,aux->ofs);
-	if(file_read(file, kva ,aux->page_read_bytes)!=aux->page_read_bytes)
-		 return false;
+
+	lock_acquire(&open_lock);
+	if(file_read(file, kva ,aux->page_read_bytes)!=aux->page_read_bytes){
+		lock_release(&open_lock);
+		return false;
+	}
+	lock_release(&open_lock);
+
 	memset(kva + aux->page_read_bytes, 0, aux->page_zero_bytes);
 	file_seek(file,offset);
 	return true;
@@ -61,10 +67,15 @@ file_backed_swap_out (struct page *page) {
 	struct file* file = aux->file;
 	off_t offset = file_tell(file);
 	if (page->writable&&pml4_is_dirty(file_page->pml4, page->va)){
-	  file_seek(aux->file,aux->ofs);
-      if((file_write (aux->file, page->va ,aux->page_read_bytes)!= aux->page_read_bytes))
-            return false; 
-    }
+		file_seek(aux->file,aux->ofs);
+
+		lock_acquire(&open_lock);
+		if((file_write (aux->file, page->va ,aux->page_read_bytes)!= aux->page_read_bytes))
+			lock_release(&open_lock);
+			return false; 
+		}
+		lock_release(&open_lock);
+
 	file_seek(file,offset);
 	page->frame=NULL;
 	pml4_set_dirty(file_page->pml4,page->va,false);
@@ -86,9 +97,12 @@ file_backed_destroy (struct page *page) {
 	file_seek(aux_set->file,aux_set->ofs);
 	size_t write_bytes = aux_set->page_read_bytes;
 	if (pml4_is_dirty(thread_current()->pml4, page->va)){
-      if((file_write (aux_set->file, page->va ,write_bytes)!= write_bytes)){
-            // some error...
-         }
+		
+		lock_acquire(&open_lock);
+		if((file_write (aux_set->file, page->va ,write_bytes)!= write_bytes)){
+			// some error...
+		}
+		lock_release(&open_lock);
     }
 	}
 	file_close(aux_set->file);
@@ -155,7 +169,10 @@ lazy_load_segment_file (struct page *page, void *aux) {
 	}
 	memset(kpage + page_read_bytes, 0, page_zero_bytes);
 */
+	lock_acquire(&open_lock);
     size_t temp_read_bytes = file_read(file, kpage, page_read_bytes) ; //이게 0나옴; ??
+	lock_release(&open_lock);
+
 	memset(kpage + temp_read_bytes, 0, page_read_bytes-temp_read_bytes);
 	memset(kpage + page_read_bytes, 0, page_zero_bytes);
 	//free(aux_set); //destory시 free하기 --> copy시 사용해야함

@@ -451,8 +451,10 @@ sys_close (uint64_t* args) {
          }
       }
    }}
-   thread_current()->fd_table[fd]=NULL;
-   file_close(file);
+	thread_current()->fd_table[fd]=NULL;
+	lock_acquire(&open_lock);
+	file_close(file);
+	lock_release(&open_lock);
 }
 
 /* Get file pointer searching in the current threads fd_table */

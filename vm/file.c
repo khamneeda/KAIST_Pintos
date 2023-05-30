@@ -88,13 +88,15 @@ file_backed_destroy (struct page *page) {
 	if(page->frame!=NULL){
 	list_remove(&page->frame->elem);
 	free(page->frame);
-	
-	file_seek(aux_set->file,aux_set->ofs);
 	size_t write_bytes = aux_set->page_read_bytes;
+	
 	if (pml4_is_dirty(thread_current()->pml4, page->va)){
+		lock_acquire(&open_lock);
+		file_seek(aux_set->file,aux_set->ofs);
 		if((file_write (aux_set->file, page->va ,write_bytes)!= write_bytes)){
 			// some error...
 		}
+		lock_release(&open_lock);
    	}
 	}
 	file_close(aux_set->file);

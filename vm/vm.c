@@ -9,6 +9,7 @@
 
 
 struct list frame_table;
+struct lock frame_lock;
 
 /* Initializes the virtual memory subsystem by invoking each subsystem's
  * intialize codes. */
@@ -17,6 +18,7 @@ vm_init (void) {
 	vm_anon_init ();
 	vm_file_init ();
 	list_init(&frame_table);
+	lock_init(&frame_lock);
 
 #ifdef EFILESYS  /* For project 4 */
 	pagecache_init ();
@@ -350,7 +352,9 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 		// 원래있던코드
 		page = spt_find_page(spt, addr);
 		if (page != NULL) {
+			lock_acquire(&frame_lock);
 			bool success= vm_do_claim_page (page);
+			lock_release(&frame_lock);
 			if (write == true && page->writable == false) return false;
 			return success;
 		}
@@ -360,7 +364,9 @@ vm_try_handle_fault (struct intr_frame *f, void *addr,
 		}
 		page = spt_find_page(spt, addr);
 		if (page == NULL) return false;
+		lock_acquire(&frame_lock);
 		succ = vm_do_claim_page (page);
+		lock_release(&frame_lock);
 	}
 	if (write == true && page->writable == false) return false;
 	return succ;
@@ -384,7 +390,9 @@ vm_claim_page (void *va) {
 	/* TODO: Fill this function */
 	page = spt_find_page(&thread_current()->spt, va);
 	if(page == NULL) return false;
+	lock_acquire(&frame_lock);
 	bool success = vm_do_claim_page (page);
+	lock_release(&frame_lock);
 	return success;
 }
 

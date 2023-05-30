@@ -99,7 +99,10 @@ file_backed_destroy (struct page *page) {
 		lock_release(&open_lock);
    	}
 	}
+
+	lock_acquire(&open_lock);
 	file_close(aux_set->file);
+	lock_release(&open_lock);
 	//palloc_free_page(page->frame->kva);
 
 	

@@ -20,6 +20,8 @@ Virtual memory : Memory management
 The manual is available at https://casys-kaist.github.io/pintos-kaist/.
 
 
+
+
 Design project
 Build a Hanuri rocket OS that can manage random memory disabled
 1. Suggest safe design

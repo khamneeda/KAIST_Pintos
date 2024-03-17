@@ -20,7 +20,7 @@ Virtual memory : Memory management
 The manual is available at https://casys-kaist.github.io/pintos-kaist/.
 
 
-.............................................
+_____________________________________________________________________________
 
 Design project
 

@@ -24,8 +24,10 @@ _____________________________________________________________________________
 
 Design project
 
-Build a Hanuri rocket OS that can manage random memory disabled
-1. Suggest safe design
-2. Improve performance
+Build a Hanuri rocket OS that can manage randomly disturbed memory from time to time.
+1. Ensure the design safe: Not using the disturbed memory address.
+2. Prevent the memory loss
+3. Improve the os performance
+4. Present a persuasive and effective design
 
 Please refer to the project guide

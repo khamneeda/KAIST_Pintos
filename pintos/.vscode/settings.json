@@ -1,5 +1,12 @@
 {
     "files.associations": {
-        "flags.h": "c"
+        "flags.h": "c",
+        "timer.h": "c",
+        "process.h": "c",
+        "syscall.h": "c",
+        "inspect.h": "c",
+        "vm.h": "c",
+        "palloc.h": "c",
+        "page_cache.h": "c"
     }
 }
